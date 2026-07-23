@@ -311,6 +311,66 @@
   }
   .stat .num{ font-family:'IBM Plex Mono', monospace; font-size:26px; font-weight:600; color:var(--primary); }
   .stat .lbl{ font-size:11.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.4px; }
+
+  select{
+    width:100%;
+    font-family:'Work Sans', sans-serif;
+    font-size:14px;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:7px;
+    background:#FBFDF9;
+    color:var(--ink);
+  }
+  select:focus{ outline:2px solid var(--primary); outline-offset:1px; }
+
+  .modal-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(18,54,37,0.45);
+    align-items:center;
+    justify-content:center;
+    z-index:60;
+    padding:20px;
+  }
+  .modal-overlay.show{ display:flex; }
+  .modal-box{
+    background:var(--surface);
+    border-radius:12px;
+    padding:24px;
+    width:100%;
+    max-width:420px;
+    box-shadow:var(--shadow);
+  }
+  .modal-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:4px;
+  }
+  .modal-head h2{
+    font-family:'Anton', sans-serif;
+    font-size:20px;
+    text-transform:uppercase;
+    color:var(--primary-dark);
+    margin:0;
+  }
+  .modal-close{
+    background:transparent;
+    border:none;
+    font-size:22px;
+    line-height:1;
+    color:var(--ink-soft);
+    cursor:pointer;
+    padding:2px 6px;
+  }
+  .modal-close:hover{ color:var(--clay); }
+  .modal-sub{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin:0 0 16px 0;
+  }
 </style>
 </head>
 <body>
@@ -321,14 +381,12 @@
       <div class="brand">Club<span>&nbsp;Set</span> Admin</div>
       <div class="subtitle">Sistema de Gestión de Reservas y Uso de Pistas</div>
     </div>
-    <div class="scope-tag">SPRINT 1 · AD01–AD06</div>
   </div>
   <div class="court-lines"></div>
   <nav>
-    <button class="tab-btn active" data-view="pistas"><span class="n">AD01</span>Pistas</button>
-    <button class="tab-btn" data-view="precio"><span class="n">AD02</span>Precio/Hora</button>
-    <button class="tab-btn" data-view="penalizacion"><span class="n">AD03</span>Penalización</button>
-    <button class="tab-btn" data-view="socios"><span class="n">AD04-06</span>Socios</button>
+    <button class="tab-btn active" data-view="pistas">Pistas</button>
+    <button class="tab-btn" data-view="precio">Precio/Hora</button>
+    <button class="tab-btn" data-view="socios">Socios</button>
   </nav>
 </header>
 
@@ -349,7 +407,7 @@
     <div class="card">
       <h2>Pistas del club</h2>
       <table>
-        <thead><tr><th>Nombre / N°</th><th>Superficie</th></tr></thead>
+        <thead><tr><th>Nombre / N°</th><th>Superficie</th><th></th></tr></thead>
         <tbody id="pistas-tbody"></tbody>
       </table>
     </div>
@@ -390,41 +448,6 @@
     </div>
   </section>
 
-  <!-- ===================== AD03: PENALIZACIÓN ===================== -->
-  <section id="view-penalizacion" class="view">
-    <div class="view-head">
-      <div>
-        <h1>Tarifa de penalización</h1>
-        <p>Monto mínimo aplicado cuando un socio cancela una reserva válida.</p>
-      </div>
-      <div class="req-pill" id="penalizacion-test-status">Prueba: modificar ≥ 3 veces</div>
-    </div>
-    <div class="grid">
-      <div class="card">
-        <div class="price-hero">
-          <div class="label">Penalización vigente</div>
-          <div class="value" id="penalizacion-actual">—</div>
-        </div>
-        <h2>Historial de cambios</h2>
-        <table>
-          <thead><tr><th>Fecha</th><th>Anterior</th><th>Nuevo</th></tr></thead>
-          <tbody id="penalizacion-tbody"></tbody>
-        </table>
-      </div>
-      <div class="card">
-        <h2>Modificar penalización</h2>
-        <div class="form-msg" id="penalizacion-msg"></div>
-        <form id="penalizacion-form">
-          <div class="field">
-            <label for="penalizacion-nuevo">Nueva penalización (Bs.)</label>
-            <input type="number" id="penalizacion-nuevo" min="0" step="0.5" placeholder="Ej. 20">
-          </div>
-          <button type="submit" class="btn btn-primary">Actualizar penalización</button>
-        </form>
-      </div>
-    </div>
-  </section>
-
   <!-- ===================== AD04-06: SOCIOS ===================== -->
   <section id="view-socios" class="view">
     <div class="view-head">
@@ -452,20 +475,20 @@
         <div class="form-msg" id="socio-msg"></div>
         <form id="socio-form">
           <div class="field">
-            <label for="socio-numero">Número de socio</label>
-            <input type="text" id="socio-numero" placeholder="Ej. S010">
+            <label for="socio-numero">Número de socio *</label>
+            <input type="text" id="socio-numero" placeholder="Ej. S010" required>
           </div>
           <div class="field">
-            <label for="socio-nombre">Nombre completo</label>
-            <input type="text" id="socio-nombre" placeholder="Ej. Ana Pérez">
+            <label for="socio-nombre">Nombre completo *</label>
+            <input type="text" id="socio-nombre" placeholder="Ej. Ana Pérez" required>
           </div>
           <div class="field">
-            <label for="socio-telefono">Teléfono</label>
-            <input type="text" id="socio-telefono" placeholder="Ej. 70000000">
+            <label for="socio-telefono">Teléfono *</label>
+            <input type="text" id="socio-telefono" placeholder="Ej. 70000000" inputmode="numeric" pattern="[0-9]*" maxlength="15" required>
           </div>
           <div class="field">
-            <label for="socio-email">Email</label>
-            <input type="email" id="socio-email" placeholder="Ej. ana@mail.com">
+            <label for="socio-email">Email *</label>
+            <input type="email" id="socio-email" placeholder="Ej. ana@mail.com" required>
           </div>
           <div class="btn-row">
             <button type="submit" class="btn btn-primary">Guardar socio</button>
@@ -477,6 +500,44 @@
   </section>
 
 </main>
+
+<div class="modal-overlay" id="reserva-overlay">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2>Nueva reserva</h2>
+      <button type="button" class="modal-close" id="reserva-close">&times;</button>
+    </div>
+    <p class="modal-sub">Pista: <strong id="reserva-pista-nombre">—</strong></p>
+    <div class="form-msg" id="reserva-msg"></div>
+    <form id="reserva-form">
+      <div class="field">
+        <label for="reserva-socio">Socio</label>
+        <select id="reserva-socio">
+          <option value="">Selecciona un socio…</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="reserva-fecha">Fecha</label>
+        <input type="date" id="reserva-fecha">
+      </div>
+      <div class="field">
+        <label for="reserva-hora">Hora (bloque de 1 hora)</label>
+        <select id="reserva-hora">
+          <option value="">Selecciona una hora…</option>
+          <option>08:00</option><option>09:00</option><option>10:00</option>
+          <option>11:00</option><option>12:00</option><option>13:00</option>
+          <option>14:00</option><option>15:00</option><option>16:00</option>
+          <option>17:00</option><option>18:00</option><option>19:00</option>
+          <option>20:00</option>
+        </select>
+      </div>
+      <div class="btn-row">
+        <button type="submit" class="btn btn-primary">Confirmar reserva</button>
+        <button type="button" class="btn btn-ghost" id="reserva-cancel">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -523,14 +584,60 @@ async function api(path, options={}){
 // ============================================================
 async function loadPistas(){
   const pistas = await api("/pistas");
+  window._pistasCache = pistas;
   const tbody = document.getElementById("pistas-tbody");
   tbody.innerHTML = pistas.map(p => `
-    <tr><td><strong>${p.nombre}</strong></td><td>${p.superficie}</td></tr>
+    <tr>
+      <td><strong>${p.nombre}</strong></td>
+      <td>${p.superficie}</td>
+      <td><button class="btn btn-primary btn-sm" onclick="openReserva(${p.id})">Reservar</button></td>
+    </tr>
   `).join("");
   document.getElementById("stat-total").textContent = pistas.length;
   document.getElementById("pistas-test-status").textContent =
     pistas.length >= 5 ? "✓ Prueba cumplida: 5 pistas visualizadas" : `Prueba: visualizar 5 pistas (${pistas.length}/5)`;
 }
+
+// ---- Modal de reserva (estático, sin persistencia — funcionalidad de Sprint 2) ----
+function openReserva(pistaId){
+  const pista = (window._pistasCache || []).find(p => p.id === pistaId);
+  if (!pista) return;
+  document.getElementById("reserva-pista-nombre").textContent = pista.nombre;
+  document.getElementById("reserva-form").dataset.pistaId = pistaId;
+
+  const select = document.getElementById("reserva-socio");
+  const socios = (window._sociosCache || []).filter(s => s.activo);
+  select.innerHTML = `<option value="">Selecciona un socio…</option>` +
+    socios.map(s => `<option value="${s.id}">${s.numeroSocio} — ${s.nombre}</option>`).join("");
+
+  document.getElementById("reserva-fecha").value = "";
+  document.getElementById("reserva-hora").value = "";
+  document.getElementById("reserva-msg").className = "form-msg";
+  document.getElementById("reserva-overlay").classList.add("show");
+}
+
+function closeReserva(){
+  document.getElementById("reserva-overlay").classList.remove("show");
+}
+document.getElementById("reserva-close").addEventListener("click", closeReserva);
+document.getElementById("reserva-cancel").addEventListener("click", closeReserva);
+document.getElementById("reserva-overlay").addEventListener("click", (e) => {
+  if (e.target.id === "reserva-overlay") closeReserva();
+});
+
+document.getElementById("reserva-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const socio = document.getElementById("reserva-socio").value;
+  const fecha = document.getElementById("reserva-fecha").value;
+  const hora = document.getElementById("reserva-hora").value;
+  if (!socio || !fecha || !hora){
+    showMsg("reserva-msg", "Selecciona socio, fecha y hora.", false);
+    return;
+  }
+  // Sin backend todavía: esta acción se conectará a la API de reservas en el Sprint 2 (SO02).
+  showToast("Reserva registrada localmente (funcionalidad completa en el próximo sprint)");
+  closeReserva();
+});
 
 // ============================================================
 // AD02 — PRECIO
@@ -560,36 +667,6 @@ document.getElementById("precio-form").addEventListener("submit", async (e) => {
     input.value = "";
     loadPrecio();
   }catch(err){ showMsg("precio-msg", err.message, false); }
-});
-
-// ============================================================
-// AD03 — PENALIZACIÓN
-// ============================================================
-async function loadPenalizacion(){
-  const data = await api("/penalizacion");
-  document.getElementById("penalizacion-actual").innerHTML = `Bs. ${data.actual.toFixed(2)}`;
-  const tbody = document.getElementById("penalizacion-tbody");
-  tbody.innerHTML = data.historial.length
-    ? [...data.historial].reverse().map(h => `
-        <tr><td class="mono">${new Date(h.fecha).toLocaleDateString()}</td><td class="mono">Bs. ${h.anterior.toFixed(2)}</td><td class="mono"><strong>Bs. ${h.nuevo.toFixed(2)}</strong></td></tr>
-      `).join("")
-    : `<tr><td colspan="3"><div class="empty">Sin cambios registrados todavía.</div></td></tr>`;
-  document.getElementById("penalizacion-test-status").textContent =
-    data.historial.length >= 3 ? `✓ Prueba cumplida: ${data.historial.length} modificaciones` : `Prueba: modificar ≥ 3 veces (${data.historial.length}/3)`;
-}
-
-document.getElementById("penalizacion-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const input = document.getElementById("penalizacion-nuevo");
-  const val = parseFloat(input.value);
-  if (isNaN(val) || val <= 0){ showMsg("penalizacion-msg", "Ingresa un valor válido, mayor a 0.", false); return; }
-  try{
-    await api("/penalizacion", { method: "PUT", body: JSON.stringify({ nuevo: val }) });
-    showMsg("penalizacion-msg", `Penalización actualizada a Bs. ${val.toFixed(2)}.`);
-    showToast(`Penalización actualizada a Bs. ${val.toFixed(2)}`);
-    input.value = "";
-    loadPenalizacion();
-  }catch(err){ showMsg("penalizacion-msg", err.message, false); }
 });
 
 // ============================================================
@@ -626,6 +703,11 @@ async function loadSocios(){
   window._sociosCache = socios;
 }
 
+// El teléfono solo admite dígitos mientras se escribe
+document.getElementById("socio-telefono").addEventListener("input", (e) => {
+  e.target.value = e.target.value.replace(/\D/g, "");
+});
+
 document.getElementById("socio-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const numeroSocio = document.getElementById("socio-numero").value.trim();
@@ -633,8 +715,12 @@ document.getElementById("socio-form").addEventListener("submit", async (e) => {
   const telefono = document.getElementById("socio-telefono").value.trim();
   const email = document.getElementById("socio-email").value.trim();
 
-  if (!numeroSocio || !nombre){
-    showMsg("socio-msg", "Número de socio y nombre son obligatorios.", false);
+  if (!numeroSocio || !nombre || !telefono || !email){
+    showMsg("socio-msg", "Todos los campos son obligatorios.", false);
+    return;
+  }
+  if (!/^\d+$/.test(telefono)){
+    showMsg("socio-msg", "El teléfono solo debe contener números.", false);
     return;
   }
 
@@ -696,7 +782,7 @@ async function bajaSocio(id){
 // ============================================================
 async function init(){
   try{
-    await Promise.all([loadPistas(), loadPrecio(), loadPenalizacion(), loadSocios()]);
+    await Promise.all([loadPistas(), loadPrecio(), loadSocios()]);
   }catch(err){
     showToast("No se pudo conectar con el backend. ¿Está corriendo en localhost:3000?", true);
     console.error(err);
