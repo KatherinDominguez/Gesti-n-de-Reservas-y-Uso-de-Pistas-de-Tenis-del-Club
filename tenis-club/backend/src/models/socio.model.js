@@ -23,7 +23,18 @@ async function darDeBaja(id) {
   const socios = await getAll();
   const socio = socios.find(s => s.id === id);
   if (!socio) throw new Error("Socio no encontrado.");
+  if (!socio.activo) throw new Error("El socio ya está dado de baja.");
   socio.activo = false; // baja lógica, no se borra
+  await writeJSON("socios.json", socios);
+  return socio;
+}
+
+async function reactivar(id) {
+  const socios = await getAll();
+  const socio = socios.find(s => s.id === id);
+  if (!socio) throw new Error("Socio no encontrado.");
+  if (socio.activo) throw new Error("El socio ya está activo.");
+  socio.activo = true; // reactivación, no se toca el resto de los datos
   await writeJSON("socios.json", socios);
   return socio;
 }
@@ -38,4 +49,4 @@ async function modificar(id, cambios) {
   return socio;
 }
 
-module.exports = { getAll, crear, darDeBaja, modificar };
+module.exports = { getAll, crear, darDeBaja, reactivar, modificar };

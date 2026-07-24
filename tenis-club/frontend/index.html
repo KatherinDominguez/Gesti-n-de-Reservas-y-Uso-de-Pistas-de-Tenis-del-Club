@@ -387,6 +387,7 @@
     <button class="tab-btn active" data-view="pistas">Pistas</button>
     <button class="tab-btn" data-view="precio">Precio/Hora</button>
     <button class="tab-btn" data-view="socios">Socios</button>
+    <button class="tab-btn" data-view="reservas">Reservas</button>
   </nav>
 </header>
 
@@ -399,7 +400,6 @@
         <h1>Catálogo de pistas</h1>
         <p>Las 5 pistas del Club ya están precargadas por el sistema. No se crean ni eliminan pistas.</p>
       </div>
-      <div class="req-pill" id="pistas-test-status">Prueba: visualizar 5 pistas</div>
     </div>
     <div class="count-row">
       <div class="stat"><div class="num" id="stat-total">0</div><div class="lbl">Pistas registradas</div></div>
@@ -420,7 +420,6 @@
         <h1>Precio por hora de reserva</h1>
         <p>Parametrización del precio vigente por hora.</p>
       </div>
-      <div class="req-pill" id="precio-test-status">Prueba: modificar el precio ≥ 3 veces</div>
     </div>
     <div class="grid">
       <div class="card">
@@ -455,7 +454,6 @@
         <h1>Gestión de socios</h1>
         <p>Alta, baja lógica y modificación de datos de socios. No se pueden modificar socios dados de baja.</p>
       </div>
-      <div class="req-pill" id="socios-test-status">Prueba: 10 altas, 3 bajas, 5 modificaciones</div>
     </div>
     <div class="count-row">
       <div class="stat"><div class="num" id="stat-socios-total">0</div><div class="lbl">Total socios</div></div>
@@ -496,6 +494,27 @@
           </div>
         </form>
       </div>
+    </div>
+  </section>
+
+  <!-- ===================== SO01-SO03: RESERVAS ===================== -->
+  <section id="view-reservas" class="view">
+    <div class="view-head">
+      <div>
+        <h1>Reservas</h1>
+        <p>Listado de reservas activas y canceladas. Solo se pueden cancelar reservas que no sean para el mismo día.</p>
+      </div>
+    </div>
+    <div class="count-row">
+      <div class="stat"><div class="num" id="stat-reservas-activas">0</div><div class="lbl">Activas</div></div>
+      <div class="stat"><div class="num" id="stat-reservas-canceladas">0</div><div class="lbl">Canceladas</div></div>
+    </div>
+    <div class="card">
+      <h2>Todas las reservas</h2>
+      <table>
+        <thead><tr><th>Socio</th><th>Pista</th><th>Fecha</th><th>Hora</th><th>Estado</th><th></th></tr></thead>
+        <tbody id="reservas-tbody"></tbody>
+      </table>
     </div>
   </section>
 
@@ -594,11 +613,9 @@ async function loadPistas(){
     </tr>
   `).join("");
   document.getElementById("stat-total").textContent = pistas.length;
-  document.getElementById("pistas-test-status").textContent =
-    pistas.length >= 5 ? "✓ Prueba cumplida: 5 pistas visualizadas" : `Prueba: visualizar 5 pistas (${pistas.length}/5)`;
 }
 
-// ---- Modal de reserva (estático, sin persistencia — funcionalidad de Sprint 2) ----
+// ---- Modal de reserva (conectado a la API real: SO01/SO02) ----
 function openReserva(pistaId){
   const pista = (window._pistasCache || []).find(p => p.id === pistaId);
   if (!pista) return;
@@ -610,11 +627,52 @@ function openReserva(pistaId){
   select.innerHTML = `<option value="">Selecciona un socio…</option>` +
     socios.map(s => `<option value="${s.id}">${s.numeroSocio} — ${s.nombre}</option>`).join("");
 
-  document.getElementById("reserva-fecha").value = "";
+  // Límite de fechas: no antes de hoy, no más de 1 mes vista (regla de negocio)
+  const hoy = new Date();
+  const minStr = hoy.toISOString().split("T")[0];
+  const maxFecha = new Date(hoy);
+  maxFecha.setMonth(maxFecha.getMonth() + 1);
+  const maxStr = maxFecha.toISOString().split("T")[0];
+  const fechaInput = document.getElementById("reserva-fecha");
+  fechaInput.min = minStr;
+  fechaInput.max = maxStr;
+  fechaInput.value = "";
+
   document.getElementById("reserva-hora").value = "";
+  resetHorasDisponibles();
   document.getElementById("reserva-msg").className = "form-msg";
   document.getElementById("reserva-overlay").classList.add("show");
 }
+
+function resetHorasDisponibles(){
+  const select = document.getElementById("reserva-hora");
+  Array.from(select.options).forEach(opt => {
+    opt.disabled = false;
+    if (opt.value) opt.textContent = opt.value;
+  });
+}
+
+// SO01 — Consulta disponibilidad real de la pista para la fecha elegida
+async function actualizarHorasDisponibles(){
+  const pistaId = document.getElementById("reserva-form").dataset.pistaId;
+  const fecha = document.getElementById("reserva-fecha").value;
+  resetHorasDisponibles();
+  if (!pistaId || !fecha) return;
+  try{
+    const data = await api(`/pistas/${pistaId}/disponibilidad?fecha=${fecha}`);
+    const ocupadas = data.ocupadas || [];
+    const select = document.getElementById("reserva-hora");
+    Array.from(select.options).forEach(opt => {
+      if (ocupadas.includes(opt.value)){
+        opt.disabled = true;
+        opt.textContent = `${opt.value} (ocupado)`;
+      }
+    });
+  }catch(err){
+    console.error(err);
+  }
+}
+document.getElementById("reserva-fecha").addEventListener("change", actualizarHorasDisponibles);
 
 function closeReserva(){
   document.getElementById("reserva-overlay").classList.remove("show");
@@ -625,18 +683,27 @@ document.getElementById("reserva-overlay").addEventListener("click", (e) => {
   if (e.target.id === "reserva-overlay") closeReserva();
 });
 
-document.getElementById("reserva-form").addEventListener("submit", (e) => {
+document.getElementById("reserva-form").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const socio = document.getElementById("reserva-socio").value;
+  const pistaId = Number(e.target.dataset.pistaId);
+  const socioId = document.getElementById("reserva-socio").value;
   const fecha = document.getElementById("reserva-fecha").value;
   const hora = document.getElementById("reserva-hora").value;
-  if (!socio || !fecha || !hora){
+  if (!socioId || !fecha || !hora){
     showMsg("reserva-msg", "Selecciona socio, fecha y hora.", false);
     return;
   }
-  // Sin backend todavía: esta acción se conectará a la API de reservas en el Sprint 2 (SO02).
-  showToast("Reserva registrada localmente (funcionalidad completa en el próximo sprint)");
-  closeReserva();
+  try{
+    await api("/reservas", {
+      method: "POST",
+      body: JSON.stringify({ socioId: Number(socioId), pistaId, fecha, hora })
+    });
+    showToast("Reserva registrada correctamente");
+    closeReserva();
+    loadReservas();
+  }catch(err){
+    showMsg("reserva-msg", err.message, false);
+  }
 });
 
 // ============================================================
@@ -651,8 +718,6 @@ async function loadPrecio(){
         <tr><td class="mono">${new Date(h.fecha).toLocaleDateString()}</td><td class="mono">Bs. ${h.anterior.toFixed(2)}</td><td class="mono"><strong>Bs. ${h.nuevo.toFixed(2)}</strong></td></tr>
       `).join("")
     : `<tr><td colspan="3"><div class="empty">Sin cambios registrados todavía.</div></td></tr>`;
-  document.getElementById("precio-test-status").textContent =
-    data.historial.length >= 3 ? `✓ Prueba cumplida: ${data.historial.length} modificaciones` : `Prueba: modificar ≥ 3 veces (${data.historial.length}/3)`;
 }
 
 document.getElementById("precio-form").addEventListener("submit", async (e) => {
@@ -685,8 +750,10 @@ async function loadSocios(){
       <td><span class="badge ${s.activo ? "activa" : "inactiva"}">${s.activo ? "Activo" : "Dado de baja"}</span></td>
       <td>
         <div class="btn-row">
-          ${s.activo ? `<button class="btn btn-ghost btn-sm" onclick="editSocio(${s.id})">Modificar</button>
-                        <button class="btn btn-clay btn-sm" onclick="bajaSocio(${s.id})">Dar de baja</button>` : ""}
+          ${s.activo
+            ? `<button class="btn btn-ghost btn-sm" onclick="editSocio(${s.id})">Modificar</button>
+               <button class="btn btn-clay btn-sm" onclick="bajaSocio(${s.id})">Dar de baja</button>`
+            : `<button class="btn btn-primary btn-sm" onclick="reactivarSocio(${s.id})">Reactivar</button>`}
         </div>
       </td>
     </tr>
@@ -697,8 +764,6 @@ async function loadSocios(){
   document.getElementById("stat-socios-total").textContent = total;
   document.getElementById("stat-socios-activos").textContent = activos;
   document.getElementById("stat-socios-baja").textContent = total - activos;
-  document.getElementById("socios-test-status").textContent =
-    `Altas: ${total} · Bajas: ${total - activos} · (mín. 10 altas, 3 bajas, 5 modificaciones)`;
 
   window._sociosCache = socios;
 }
@@ -777,12 +842,80 @@ async function bajaSocio(id){
   }
 }
 
+async function reactivarSocio(id){
+  const s = window._sociosCache.find(s => s.id === id);
+  if (!s) return;
+  try{
+    await api(`/socios/${id}/reactivar`, { method: "PATCH" });
+    showToast(`Socio "${s.nombre}" reactivado`);
+    loadSocios();
+  }catch(err){
+    showToast(err.message, true);
+  }
+}
+
+// ============================================================
+// SO01-SO03 — RESERVAS (listar + cancelar)
+// ============================================================
+function formatFecha(fechaStr){
+  // fechaStr viene como "YYYY-MM-DD"; se formatea sin desfases de zona horaria
+  const [y, m, d] = fechaStr.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+function esMismoDiaReserva(fechaStr){
+  const hoy = new Date();
+  const hoyStr = hoy.toISOString().split("T")[0];
+  return fechaStr === hoyStr;
+}
+
+async function loadReservas(){
+  const reservas = await api("/reservas");
+  const socios = window._sociosCache || [];
+  const pistas = window._pistasCache || [];
+
+  const tbody = document.getElementById("reservas-tbody");
+  tbody.innerHTML = reservas.length ? [...reservas].reverse().map(r => {
+    const socio = socios.find(s => s.id === r.socioId);
+    const pista = pistas.find(p => p.id === r.pistaId);
+    const puedeCancelar = r.estado === "activa" && !esMismoDiaReserva(r.fecha);
+    return `
+      <tr>
+        <td>${socio ? `${socio.numeroSocio} — ${socio.nombre}` : "Socio eliminado"}</td>
+        <td>${pista ? pista.nombre : "—"}</td>
+        <td class="mono">${formatFecha(r.fecha)}</td>
+        <td class="mono">${r.hora}</td>
+        <td><span class="badge ${r.estado === "activa" ? "activa" : "inactiva"}">${r.estado === "activa" ? "Activa" : "Cancelada"}</span></td>
+        <td>
+          ${puedeCancelar ? `<button class="btn btn-clay btn-sm" onclick="cancelarReserva(${r.id})">Cancelar</button>` : ""}
+        </td>
+      </tr>
+    `;
+  }).join("") : `<tr><td colspan="6"><div class="empty">Aún no hay reservas registradas.</div></td></tr>`;
+
+  const activas = reservas.filter(r => r.estado === "activa").length;
+  document.getElementById("stat-reservas-activas").textContent = activas;
+  document.getElementById("stat-reservas-canceladas").textContent = reservas.length - activas;
+
+  window._reservasCache = reservas;
+}
+
+async function cancelarReserva(id){
+  try{
+    await api(`/reservas/${id}/cancelar`, { method: "PATCH" });
+    showToast("Reserva cancelada correctamente");
+    loadReservas();
+  }catch(err){
+    showToast(err.message, true);
+  }
+}
+
 // ============================================================
 // INIT
 // ============================================================
 async function init(){
   try{
-    await Promise.all([loadPistas(), loadPrecio(), loadSocios()]);
+    await Promise.all([loadPistas(), loadPrecio(), loadSocios(), loadReservas()]);
   }catch(err){
     showToast("No se pudo conectar con el backend. ¿Está corriendo en localhost:3000?", true);
     console.error(err);

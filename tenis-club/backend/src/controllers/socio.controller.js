@@ -23,6 +23,15 @@ exports.baja = async (req, res) => {
   }
 };
 
+exports.reactivar = async (req, res) => {
+  try {
+    const socio = await Socio.reactivar(Number(req.params.id));
+    res.json(socio);
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+};
+
 exports.modificar = async (req, res) => {
   try {
     const socio = await Socio.modificar(Number(req.params.id), req.body);
