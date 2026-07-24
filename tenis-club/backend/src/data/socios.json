@@ -1,26 +1,3 @@
 [
-  {
-    "id": 1784832497471,
-    "numeroSocio": "1",
-    "nombre": "Noemi Soledad Condori Gaspar",
-    "telefono": "65349444",
-    "email": "nosocoga@gmail.com",
-    "activo": true
-  },
-  {
-    "id": 1784832640438,
-    "numeroSocio": "2",
-    "nombre": "Carlos Gomez",
-    "telefono": "54644222",
-    "email": "",
-    "activo": true
-  },
-  {
-    "id": 1784832665040,
-    "numeroSocio": "3",
-    "nombre": "Carla Gaspar",
-    "telefono": "123123",
-    "email": "",
-    "activo": true
-  }
+ 
 ]
