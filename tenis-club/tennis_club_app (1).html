@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Club de Tenis — Panel de Administración</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@500;600&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #F3F6EE;
+    --surface: #FFFFFF;
+    --ink: #16261C;
+    --ink-soft: #4B5A4E;
+    --primary: #1F5C3F;
+    --primary-dark: #123625;
+    --accent: #CFE356;
+    --line: #DCE5D3;
+    --clay: #A8462E;
+    --clay-soft: #F3E1DA;
+    --ok-soft: #DEEBD6;
+    --shadow: 0 2px 10px rgba(18,54,37,0.07), 0 1px 2px rgba(18,54,37,0.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Work Sans', sans-serif;
+    min-height:100vh;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(31,92,63,0.035) 39px, rgba(31,92,63,0.035) 40px);
+  }
+
+  /* ---- Header / court-line signature ---- */
+  header{
+    background:var(--primary);
+    color:#fff;
+    padding:28px 32px 0 32px;
+    position:relative;
+    overflow:hidden;
+  }
+  .brand-row{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:8px;
+    max-width:1080px;
+    margin:0 auto;
+    position:relative;
+    z-index:2;
+  }
+  .brand{
+    font-family:'Anton', sans-serif;
+    font-size:clamp(28px, 4vw, 42px);
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+    line-height:1;
+  }
+  .brand span{color:var(--accent);}
+  .subtitle{
+    font-size:13px;
+    color:rgba(255,255,255,0.75);
+    font-weight:500;
+    letter-spacing:0.3px;
+  }
+  .court-lines{
+    max-width:1080px;
+    margin:22px auto 0 auto;
+    position:relative;
+    height:14px;
+  }
+  .court-lines::before, .court-lines::after{
+    content:"";
+    position:absolute;
+    left:0; right:0;
+    height:2px;
+    background:rgba(255,255,255,0.9);
+  }
+  .court-lines::before{ top:0; }
+  .court-lines::after{ top:10px; opacity:0.4; }
+
+  nav{
+    max-width:1080px;
+    margin:0 auto;
+    display:flex;
+    gap:4px;
+    padding-top:18px;
+    position:relative;
+    z-index:2;
+  }
+  nav button{
+    font-family:'Work Sans', sans-serif;
+    font-weight:600;
+    font-size:14.5px;
+    color:rgba(255,255,255,0.72);
+    background:transparent;
+    border:none;
+    padding:12px 18px;
+    cursor:pointer;
+    border-bottom:3px solid transparent;
+    transition:color .15s ease, border-color .15s ease;
+  }
+  nav button:hover{ color:#fff; }
+  nav button.active{
+    color:#fff;
+    border-bottom-color:var(--accent);
+  }
+
+  main{
+    max-width:1080px;
+    margin:0 auto;
+    padding:32px 32px 80px 32px;
+  }
+  .view{ display:none; animation:fadeIn .25s ease; }
+  .view.active{ display:block; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;} }
+
+  .view-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:20px;
+  }
+  .view-head h1{
+    font-family:'Anton', sans-serif;
+    font-size:26px;
+    text-transform:uppercase;
+    letter-spacing:0.3px;
+    margin:0 0 4px 0;
+    color:var(--primary-dark);
+  }
+  .view-head p{
+    margin:0;
+    color:var(--ink-soft);
+    font-size:14px;
+    max-width:520px;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap:20px;
+  }
+  @media (max-width:760px){ .grid{ grid-template-columns:1fr; } }
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:10px;
+    box-shadow:var(--shadow);
+    padding:22px;
+  }
+  .card h2{
+    font-size:15px;
+    margin:0 0 14px 0;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    color:var(--ink-soft);
+    font-weight:700;
+  }
+
+  table{ width:100%; border-collapse:collapse; font-size:14px; }
+  th{
+    text-align:left;
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:0.4px;
+    color:var(--ink-soft);
+    padding:8px 10px;
+    border-bottom:2px solid var(--line);
+  }
+  td{
+    padding:11px 10px;
+    border-bottom:1px solid var(--line);
+    vertical-align:middle;
+  }
+  tr:last-child td{ border-bottom:none; }
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+
+  .badge{
+    display:inline-block;
+    font-size:11.5px;
+    font-weight:600;
+    padding:4px 10px;
+    border-radius:20px;
+  }
+  .badge.activa{ background:var(--ok-soft); color:var(--primary-dark); }
+  .badge.inactiva{ background:var(--clay-soft); color:var(--clay); }
+
+  .btn{
+    font-family:'Work Sans', sans-serif;
+    font-weight:600;
+    font-size:13px;
+    border:none;
+    border-radius:6px;
+    padding:8px 14px;
+    cursor:pointer;
+    transition:transform .1s ease, opacity .15s ease;
+  }
+  .btn:active{ transform:scale(0.97); }
+  .btn-primary{ background:var(--primary); color:#fff; }
+  .btn-primary:hover{ background:var(--primary-dark); }
+  .btn-ghost{ background:transparent; color:var(--primary-dark); border:1px solid var(--line); }
+  .btn-ghost:hover{ background:var(--ok-soft); }
+  .btn-clay{ background:transparent; color:var(--clay); border:1px solid var(--clay-soft); }
+  .btn-clay:hover{ background:var(--clay-soft); }
+  .btn-sm{ padding:6px 10px; font-size:12px; }
+  .btn-row{ display:flex; gap:6px; }
+
+  label{
+    display:block;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  input[type=text], input[type=number]{
+    width:100%;
+    font-family:'Work Sans', sans-serif;
+    font-size:14px;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:7px;
+    background:#FBFDF9;
+    color:var(--ink);
+  }
+  input:focus{ outline:2px solid var(--primary); outline-offset:1px; }
+  .field{ margin-bottom:14px; }
+  .form-msg{
+    font-size:13px;
+    padding:9px 12px;
+    border-radius:7px;
+    margin-bottom:14px;
+    display:none;
+  }
+  .form-msg.show{ display:block; }
+  .form-msg.ok{ background:var(--ok-soft); color:var(--primary-dark); }
+  .form-msg.err{ background:var(--clay-soft); color:var(--clay); }
+
+  .price-hero{
+    text-align:center;
+    padding:18px 0 22px 0;
+    border-bottom:1px dashed var(--line);
+    margin-bottom:18px;
+  }
+  .price-hero .label{
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:0.6px;
+    color:var(--ink-soft);
+    font-weight:700;
+  }
+  .price-hero .value{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:44px;
+    font-weight:600;
+    color:var(--primary);
+    margin:4px 0 0 0;
+  }
+  .price-hero .value span{ font-size:20px; color:var(--ink-soft); }
+
+  .empty{
+    text-align:center;
+    padding:30px 10px;
+    color:var(--ink-soft);
+    font-size:13.5px;
+  }
+
+  .toast{
+    position:fixed;
+    bottom:24px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--primary-dark);
+    color:#fff;
+    padding:12px 20px;
+    border-radius:8px;
+    font-size:13.5px;
+    font-weight:500;
+    box-shadow:var(--shadow);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s ease, transform .2s ease;
+    z-index:50;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast.err{ background:var(--clay); }
+
+  .count-row{ display:flex; gap:14px; margin-bottom:16px; flex-wrap:wrap; }
+  .stat{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:14px 18px;
+    min-width:120px;
+    box-shadow:var(--shadow);
+  }
+  .stat .num{ font-family:'IBM Plex Mono', monospace; font-size:26px; font-weight:600; color:var(--primary); }
+  .stat .lbl{ font-size:11.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand-row">
+    <div>
+      <div class="brand">Club<span>&nbsp;Set</span> Admin</div>
+      <div class="subtitle">Sistema de Gestión de Reservas y Uso de Pistas</div>
+    </div>
+  </div>
+  <div class="court-lines"></div>
+  <nav>
+    <button class="tab-btn active" data-view="pistas">Catálogo de Pistas</button>
+    <button class="tab-btn" data-view="precio">Precio por Hora</button>
+    <button class="tab-btn" data-view="socios">Socios</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ===================== VISTA: PISTAS ===================== -->
+  <section id="view-pistas" class="view active">
+    <div class="view-head">
+      <div>
+        <h1>Catálogo de pistas</h1>
+        <p>Registro y visualización de las pistas del Club. Requerimiento AD01 — parametrización base del sistema.</p>
+      </div>
+      <div id="pistas-test-status" style="font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--ink-soft);"></div>
+    </div>
+
+    <div class="count-row">
+      <div class="stat"><div class="num" id="stat-total">0</div><div class="lbl">Pistas registradas</div></div>
+      <div class="stat"><div class="num" id="stat-activas">0</div><div class="lbl">Activas</div></div>
+      <div class="stat"><div class="num" id="stat-inactivas">0</div><div class="lbl">Dadas de baja</div></div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Pistas del club</h2>
+        <table>
+          <thead>
+            <tr><th>Nombre / N°</th><th>Superficie</th><th>Estado</th><th></th></tr>
+          </thead>
+          <tbody id="pistas-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2 id="pista-form-title">Registrar nueva pista</h2>
+        <div class="form-msg" id="pista-msg"></div>
+        <form id="pista-form">
+          <div class="field">
+            <label for="pista-nombre">Nombre o número de pista</label>
+            <input type="text" id="pista-nombre" placeholder="Ej. Pista 6">
+          </div>
+          <div class="field">
+            <label for="pista-superficie">Superficie</label>
+            <input type="text" id="pista-superficie" placeholder="Ej. Tierra batida, Dura, Césped">
+          </div>
+          <div class="btn-row">
+            <button type="submit" class="btn btn-primary">Guardar pista</button>
+            <button type="button" class="btn btn-ghost" id="pista-cancel-edit" style="display:none;">Cancelar edición</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== VISTA: PRECIO ===================== -->
+  <section id="view-precio" class="view">
+    <div class="view-head">
+      <div>
+        <h1>Precio por hora de reserva</h1>
+        <p>Parametrización del precio vigente por hora. Requerimiento AD02 — base para el cálculo de la facturación mensual.</p>
+      </div>
+      <div id="precio-test-status" style="font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--ink-soft);"></div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="price-hero">
+          <div class="label">Precio vigente por hora</div>
+          <div class="value" id="precio-actual">—</div>
+        </div>
+        <h2>Historial de cambios de precio</h2>
+        <table>
+          <thead>
+            <tr><th>Fecha</th><th>Precio anterior</th><th>Precio nuevo</th></tr>
+          </thead>
+          <tbody id="precio-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Modificar precio</h2>
+        <div class="form-msg" id="precio-msg"></div>
+        <form id="precio-form">
+          <div class="field">
+            <label for="precio-nuevo">Nuevo precio por hora (Bs.)</label>
+            <input type="number" id="precio-nuevo" min="0" step="0.5" placeholder="Ej. 45">
+          </div>
+          <button type="submit" class="btn btn-primary">Actualizar precio</button>
+        </form>
+
+        <!-- Tarifa Castigo -->
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px dashed var(--line);">
+          <h2>Tarifa Castigo</h2>
+          <button id="btn-show-castigo" class="btn btn-clay">Configurar Tarifa Castigo</button>
+          
+          <div id="castigo-section" style="display:none; margin-top: 15px;">
+            <div class="price-hero" style="padding-top:0; border:none;">
+              <div class="label">Tarifa Castigo Actual</div>
+              <div class="value" id="castigo-actual">Bs. 0.00</div>
+            </div>
+            <div class="form-msg" id="castigo-msg"></div>
+            <form id="castigo-form">
+              <div class="field">
+                <label for="castigo-nuevo">Monto (Bs.)</label>
+                <input type="number" id="castigo-nuevo" min="0" step="0.5" placeholder="Ej. 15">
+              </div>
+              <button type="submit" class="btn btn-sm btn-clay">Fijar Tarifa Castigo</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== VISTA: SOCIOS ===================== -->
+  <section id="view-socios" class="view">
+    <div class="view-head">
+      <div>
+        <h1>Gestión de Socios</h1>
+        <p>Registro, modificación y baja de miembros del club.</p>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Listado de Socios</h2>
+        <table>
+          <thead>
+            <tr><th>Nombre</th><th>CI</th><th>Teléfono</th><th>Estado</th><th></th></tr>
+          </thead>
+          <tbody id="socios-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2 id="socio-form-title">Registrar nuevo socio</h2>
+        <div class="form-msg" id="socio-msg"></div>
+        <form id="socio-form">
+          <div class="field">
+            <label for="socio-nombre">Nombre completo</label>
+            <input type="text" id="socio-nombre" placeholder="Ej. Juan Pérez">
+          </div>
+          <div class="field">
+            <label for="socio-ci">Carnet de Identidad (CI)</label>
+            <input type="text" id="socio-ci" placeholder="Ej. 1234567">
+          </div>
+          <div class="field">
+            <label for="socio-telefono">Teléfono / Celular</label>
+            <input type="text" id="socio-telefono" placeholder="Ej. 70012345">
+          </div>
+          <div class="btn-row">
+            <button type="submit" class="btn btn-primary">Guardar socio</button>
+            <button type="button" class="btn btn-ghost" id="socio-cancel-edit" style="display:none;">Cancelar edición</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// ESTADO EN MEMORIA (sin localStorage / sessionStorage)
+// ============================================================
+let pistas = [
+  { id: 1, nombre: "Pista 1", superficie: "Tierra batida", estado: "Activa" },
+  { id: 2, nombre: "Pista 2", superficie: "Tierra batida", estado: "Activa" },
+  { id: 3, nombre: "Pista 3", superficie: "Dura", estado: "Activa" },
+  { id: 4, nombre: "Pista 4", superficie: "Dura", estado: "Activa" },
+  { id: 5, nombre: "Pista 5", superficie: "Césped", estado: "Activa" },
+];
+let nextPistaId = 6;
+let editingPistaId = null;
+
+let precioActual = 40;
+let historialPrecio = [
+  { fecha: "01/03/2026", anterior: 35, nuevo: 38 },
+  { fecha: "01/05/2026", anterior: 38, nuevo: 40 },
+];
+let tarifaCastigo = 5;
+
+let socios = [];
+let nextSocioId = 1;
+let editingSocioId = null;
+
+// ============================================================
+// NAVEGACIÓN
+// ============================================================
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("view-" + btn.dataset.view).classList.add("active");
+  });
+});
+
+function showToast(text, isErr=false){
+  const t = document.getElementById("toast");
+  t.textContent = text;
+  t.className = "toast show" + (isErr ? " err" : "");
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => { t.className = "toast"; }, 2600);
+}
+
+function showMsg(elId, text, ok=true){
+  const el = document.getElementById(elId);
+  el.textContent = text;
+  el.className = "form-msg show " + (ok ? "ok" : "err");
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.className = "form-msg"; }, 3200);
+}
+
+// ============================================================
+// AD01 — CATÁLOGO DE PISTAS
+// ============================================================
+function renderPistas(){
+  const tbody = document.getElementById("pistas-tbody");
+  tbody.innerHTML = "";
+
+  if (pistas.length === 0){
+    tbody.innerHTML = `<tr><td colspan="4"><div class="empty">Aún no hay pistas registradas. Registra la primera arriba.</div></td></tr>`;
+  } else {
+    pistas.forEach(p => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><strong>${p.nombre}</strong></td>
+        <td>${p.superficie}</td>
+        <td><span class="badge ${p.estado === "Activa" ? "activa" : "inactiva"}">${p.estado}</span></td>
+        <td>
+          <div class="btn-row">
+            <button class="btn btn-ghost btn-sm" onclick="editPista(${p.id})">Modificar</button>
+            ${p.estado === "Activa"
+              ? `<button class="btn btn-clay btn-sm" onclick="toggleBaja(${p.id})">Dar de baja</button>`
+              : `<button class="btn btn-ghost btn-sm" onclick="toggleBaja(${p.id})">Reactivar</button>`}
+          </div>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  const total = pistas.length;
+  const activas = pistas.filter(p => p.estado === "Activa").length;
+  document.getElementById("stat-total").textContent = total;
+  document.getElementById("stat-activas").textContent = activas;
+  document.getElementById("stat-inactivas").textContent = total - activas;
+
+  const testEl = document.getElementById("pistas-test-status");
+}
+
+document.getElementById("pista-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const nombreInput = document.getElementById("pista-nombre");
+  const superficieInput = document.getElementById("pista-superficie");
+  const nombre = nombreInput.value.trim();
+  const superficie = superficieInput.value.trim();
+
+  if (!nombre){
+    showMsg("pista-msg", "El nombre o número de la pista es obligatorio.", false);
+    return;
+  }
+  const duplicada = pistas.some(p => p.nombre.toLowerCase() === nombre.toLowerCase() && p.id !== editingPistaId);
+  if (duplicada){
+    showMsg("pista-msg", "Ya existe una pista registrada con ese nombre.", false);
+    return;
+  }
+
+  if (editingPistaId){
+    const p = pistas.find(p => p.id === editingPistaId);
+    p.nombre = nombre;
+    p.superficie = superficie || p.superficie;
+    showMsg("pista-msg", `Pista "${nombre}" actualizada correctamente.`);
+    showToast(`Pista "${nombre}" modificada`);
+    cancelEditPista();
+  } else {
+    pistas.push({ id: nextPistaId++, nombre, superficie: superficie || "No especificada", estado: "Activa" });
+    showMsg("pista-msg", `Pista "${nombre}" registrada correctamente.`);
+    showToast(`Pista "${nombre}" registrada`);
+    nombreInput.value = "";
+    superficieInput.value = "";
+  }
+  renderPistas();
+});
+
+function editPista(id){
+  const p = pistas.find(p => p.id === id);
+  if (!p) return;
+  editingPistaId = id;
+  document.getElementById("pista-nombre").value = p.nombre;
+  document.getElementById("pista-superficie").value = p.superficie;
+  document.getElementById("pista-form-title").textContent = `Modificando: ${p.nombre}`;
+  document.getElementById("pista-cancel-edit").style.display = "inline-block";
+  document.getElementById("pista-nombre").focus();
+}
+
+function cancelEditPista(){
+  editingPistaId = null;
+  document.getElementById("pista-form-title").textContent = "Registrar nueva pista";
+  document.getElementById("pista-cancel-edit").style.display = "none";
+  document.getElementById("pista-form").reset();
+}
+document.getElementById("pista-cancel-edit").addEventListener("click", cancelEditPista);
+
+function toggleBaja(id){
+  const p = pistas.find(p => p.id === id);
+  if (!p) return;
+  p.estado = p.estado === "Activa" ? "Inactiva" : "Activa";
+  showToast(p.estado === "Activa" ? `Pista "${p.nombre}" reactivada` : `Pista "${p.nombre}" dada de baja`);
+  renderPistas();
+}
+
+// ============================================================
+// AD02 — PRECIO POR HORA
+// ============================================================
+function renderPrecio(){
+  document.getElementById("precio-actual").innerHTML = `Bs. ${precioActual.toFixed(2)} <span>/ hora</span>`;
+
+  const tbody = document.getElementById("precio-tbody");
+  tbody.innerHTML = "";
+  if (historialPrecio.length === 0){
+    tbody.innerHTML = `<tr><td colspan="3"><div class="empty">Sin cambios registrados todavía.</div></td></tr>`;
+  } else {
+    [...historialPrecio].reverse().forEach(h => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="mono">${h.fecha}</td>
+        <td class="mono">Bs. ${h.anterior.toFixed(2)}</td>
+        <td class="mono"><strong>Bs. ${h.nuevo.toFixed(2)}</strong></td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  const testEl = document.getElementById("precio-test-status");
+}
+
+document.getElementById("precio-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const input = document.getElementById("precio-nuevo");
+  const val = parseFloat(input.value);
+
+  if (isNaN(val) || val <= 0){
+    showMsg("precio-msg", "Ingresa un precio válido, mayor a 0.", false);
+    return;
+  }
+  if (val === precioActual){
+    showMsg("precio-msg", "El nuevo precio debe ser distinto al precio vigente.", false);
+    return;
+  }
+
+  const hoy = new Date();
+  const fecha = String(hoy.getDate()).padStart(2,"0") + "/" + String(hoy.getMonth()+1).padStart(2,"0") + "/" + hoy.getFullYear();
+
+  historialPrecio.push({ fecha, anterior: precioActual, nuevo: val });
+  showMsg("precio-msg", `Precio actualizado de Bs. ${precioActual.toFixed(2)} a Bs. ${val.toFixed(2)}.`);
+  showToast(`Precio actualizado a Bs. ${val.toFixed(2)}`);
+  precioActual = val;
+  input.value = "";
+  renderPrecio();
+});
+
+// TARIFA CASTIGO
+document.getElementById("btn-show-castigo").addEventListener("click", () => {
+  document.getElementById("castigo-section").style.display = "block";
+  document.getElementById("btn-show-castigo").style.display = "none";
+  renderCastigo();
+});
+
+function renderCastigo(){
+  document.getElementById("castigo-actual").innerHTML = `Bs. ${tarifaCastigo.toFixed(2)}`;
+}
+
+document.getElementById("castigo-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const input = document.getElementById("castigo-nuevo");
+  const val = parseFloat(input.value);
+
+  if (isNaN(val) || val < 0){
+    showMsg("castigo-msg", "Ingresa un monto válido (0 o mayor).", false);
+    return;
+  }
+
+  tarifaCastigo = val;
+  showMsg("castigo-msg", `Tarifa castigo actualizada a Bs. ${val.toFixed(2)}.`);
+  showToast(`Tarifa castigo actualizada a Bs. ${val.toFixed(2)}`);
+  input.value = "";
+  renderCastigo();
+});
+
+// ============================================================
+// GESTIÓN DE SOCIOS
+// ============================================================
+function renderSocios(){
+  const tbody = document.getElementById("socios-tbody");
+  tbody.innerHTML = "";
+
+  if (socios.length === 0){
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty">Aún no hay socios registrados.</div></td></tr>`;
+  } else {
+    socios.forEach(s => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><strong>${s.nombre}</strong></td>
+        <td>${s.ci}</td>
+        <td>${s.telefono}</td>
+        <td><span class="badge ${s.estado === 'Activo' ? 'activa' : 'inactiva'}">${s.estado}</span></td>
+        <td>
+          <div class="btn-row">
+            <button class="btn btn-ghost btn-sm" onclick="editSocio(${s.id})">Modificar</button>
+            ${s.estado === 'Activo'
+              ? `<button class="btn btn-clay btn-sm" onclick="toggleBajaSocio(${s.id})">Dar de baja</button>`
+              : `<button class="btn btn-ghost btn-sm" onclick="toggleBajaSocio(${s.id})">Reactivar</button>`}
+          </div>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+  }
+}
+
+document.getElementById("socio-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const nombre = document.getElementById("socio-nombre").value.trim();
+  const ci = document.getElementById("socio-ci").value.trim();
+  const tel = document.getElementById("socio-telefono").value.trim();
+
+  if (!nombre || !ci){
+    showMsg("socio-msg", "El nombre y el CI son obligatorios.", false);
+    return;
+  }
+
+  if (editingSocioId){
+    const s = socios.find(x => x.id === editingSocioId);
+    s.nombre = nombre;
+    s.ci = ci;
+    s.telefono = tel || s.telefono;
+    showMsg("socio-msg", `Socio "${nombre}" actualizado correctamente.`);
+    showToast(`Socio modificado`);
+    cancelEditSocio();
+  } else {
+    socios.push({ id: nextSocioId++, nombre, ci, telefono: tel || "N/A", estado: "Activo" });
+    showMsg("socio-msg", `Socio "${nombre}" registrado correctamente.`);
+    showToast(`Socio registrado`);
+    document.getElementById("socio-form").reset();
+  }
+  renderSocios();
+});
+
+function editSocio(id){
+  const s = socios.find(x => x.id === id);
+  if (!s) return;
+  editingSocioId = id;
+  document.getElementById("socio-nombre").value = s.nombre;
+  document.getElementById("socio-ci").value = s.ci;
+  document.getElementById("socio-telefono").value = s.telefono !== "N/A" ? s.telefono : "";
+  document.getElementById("socio-form-title").textContent = `Modificando: ${s.nombre}`;
+  document.getElementById("socio-cancel-edit").style.display = "inline-block";
+  document.getElementById("socio-nombre").focus();
+}
+
+function cancelEditSocio(){
+  editingSocioId = null;
+  document.getElementById("socio-form-title").textContent = "Registrar nuevo socio";
+  document.getElementById("socio-cancel-edit").style.display = "none";
+  document.getElementById("socio-form").reset();
+}
+document.getElementById("socio-cancel-edit").addEventListener("click", cancelEditSocio);
+
+function toggleBajaSocio(id){
+  const s = socios.find(x => x.id === id);
+  if (!s) return;
+  s.estado = s.estado === "Activo" ? "Inactivo" : "Activo";
+  showToast(s.estado === "Activo" ? `Socio "${s.nombre}" reactivado` : `Socio "${s.nombre}" dado de baja`);
+  renderSocios();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+renderPistas();
+renderPrecio();
+renderSocios();
+</script>
+
+</body>
+</html>
