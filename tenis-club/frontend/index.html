@@ -1,0 +1,1651 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Club de Tenis — Panel de Administración</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@500;600&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #F3F6EE;
+    --surface: #FFFFFF;
+    --ink: #16261C;
+    --ink-soft: #4B5A4E;
+    --primary: #1F5C3F;
+    --primary-dark: #123625;
+    --accent: #CFE356;
+    --line: #DCE5D3;
+    --clay: #A8462E;
+    --clay-soft: #F3E1DA;
+    --ok-soft: #DEEBD6;
+    --shadow: 0 2px 10px rgba(18,54,37,0.07), 0 1px 2px rgba(18,54,37,0.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Work Sans', sans-serif;
+    min-height:100vh;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(31,92,63,0.035) 39px, rgba(31,92,63,0.035) 40px);
+  }
+
+  /* ---- Header ---- */
+  header{
+    background:var(--primary);
+    color:#fff;
+    padding:28px 32px 0 32px;
+    position:relative;
+    overflow:hidden;
+  }
+  .brand-row{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:8px;
+    max-width:1080px;
+    margin:0 auto;
+    position:relative;
+    z-index:2;
+  }
+  .brand{
+    font-family:'Anton', sans-serif;
+    font-size:clamp(28px, 4vw, 42px);
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+    line-height:1;
+  }
+  .brand span{color:var(--accent);}
+  .subtitle{
+    font-size:13px;
+    color:rgba(255,255,255,0.75);
+    font-weight:500;
+    letter-spacing:0.3px;
+  }
+  .court-lines{
+    max-width:1080px;
+    margin:22px auto 0 auto;
+    position:relative;
+    height:14px;
+  }
+  .court-lines::before, .court-lines::after{
+    content:"";
+    position:absolute;
+    left:0; right:0;
+    height:2px;
+    background:rgba(255,255,255,0.9);
+  }
+  .court-lines::before{ top:0; }
+  .court-lines::after{ top:10px; opacity:0.4; }
+
+  nav{
+    max-width:1080px;
+    margin:0 auto;
+    display:flex;
+    gap:4px;
+    padding-top:18px;
+    position:relative;
+    z-index:2;
+  }
+  nav button{
+    font-family:'Work Sans', sans-serif;
+    font-weight:600;
+    font-size:14.5px;
+    color:rgba(255,255,255,0.72);
+    background:transparent;
+    border:none;
+    padding:12px 18px;
+    cursor:pointer;
+    border-bottom:3px solid transparent;
+    transition:color .15s ease, border-color .15s ease;
+  }
+  nav button:hover{ color:#fff; }
+  nav button.active{
+    color:#fff;
+    border-bottom-color:var(--accent);
+  }
+
+  main{
+    max-width:1080px;
+    margin:0 auto;
+    padding:32px 32px 80px 32px;
+  }
+  .view{ display:none; animation:fadeIn .25s ease; }
+  .view.active{ display:block; }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;} }
+
+  .view-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:20px;
+  }
+  .view-head h1{
+    font-family:'Anton', sans-serif;
+    font-size:26px;
+    text-transform:uppercase;
+    letter-spacing:0.3px;
+    margin:0 0 4px 0;
+    color:var(--primary-dark);
+  }
+  .view-head p{
+    margin:0;
+    color:var(--ink-soft);
+    font-size:14px;
+    max-width:520px;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap:20px;
+  }
+  @media (max-width:820px){ .grid{ grid-template-columns:1fr; } }
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:10px;
+    box-shadow:var(--shadow);
+    padding:22px;
+  }
+  .card h2{
+    font-size:15px;
+    margin:0 0 14px 0;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    color:var(--ink-soft);
+    font-weight:700;
+  }
+
+  table{ width:100%; border-collapse:collapse; font-size:14px; }
+  th{
+    text-align:left;
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:0.4px;
+    color:var(--ink-soft);
+    padding:8px 10px;
+    border-bottom:2px solid var(--line);
+  }
+  td{
+    padding:11px 10px;
+    border-bottom:1px solid var(--line);
+    vertical-align:middle;
+  }
+  tr:last-child td{ border-bottom:none; }
+  .mono{ font-family:'IBM Plex Mono', monospace; }
+
+  .badge{
+    display:inline-block;
+    font-size:11.5px;
+    font-weight:600;
+    padding:4px 10px;
+    border-radius:20px;
+  }
+  .badge.activa{ background:var(--ok-soft); color:var(--primary-dark); }
+  .badge.inactiva{ background:var(--clay-soft); color:var(--clay); }
+
+  .btn{
+    font-family:'Work Sans', sans-serif;
+    font-weight:600;
+    font-size:13px;
+    border:none;
+    border-radius:6px;
+    padding:10px 14px;
+    cursor:pointer;
+    transition:transform .1s ease, opacity .15s ease;
+  }
+  .btn:active{ transform:scale(0.97); }
+  .btn-primary{ background:var(--primary); color:#fff; }
+  .btn-primary:hover{ background:var(--primary-dark); }
+  .btn-success{ background:#15803D; color:#fff; }
+  .btn-success:hover{ background:#166534; }
+  .btn-ghost{ background:transparent; color:var(--primary-dark); border:1px solid var(--line); }
+  .btn-ghost:hover{ background:var(--ok-soft); }
+  .btn-clay{ background:transparent; color:var(--clay); border:1px solid var(--clay-soft); }
+  .btn-clay:hover{ background:var(--clay-soft); }
+  .btn-sm{ padding:4px 8px; font-size:11.5px; }
+  .btn-row{ display:flex; gap:8px; }
+
+  label{
+    display:block;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  input[type=text], input[type=number], input[type=date], select{
+    width:100%;
+    font-family:'Work Sans', sans-serif;
+    font-size:14px;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:7px;
+    background:#FBFDF9;
+    color:var(--ink);
+  }
+  input:focus, select:focus{ outline:2px solid var(--primary); outline-offset:1px; }
+  .field{ margin-bottom:14px; }
+  
+  .form-msg{
+    font-size:13px;
+    padding:9px 12px;
+    border-radius:7px;
+    margin-bottom:14px;
+    display:none;
+  }
+  .form-msg.show{ display:block; }
+  .form-msg.ok{ background:var(--ok-soft); color:var(--primary-dark); }
+  .form-msg.err{ background:var(--clay-soft); color:var(--clay); }
+
+  .price-hero{
+    text-align:center;
+    padding:18px 0 22px 0;
+    border-bottom:1px dashed var(--line);
+    margin-bottom:18px;
+  }
+  .price-hero .label{
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:0.6px;
+    color:var(--ink-soft);
+    font-weight:700;
+  }
+  .price-hero .value{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:44px;
+    font-weight:600;
+    color:var(--primary);
+    margin:4px 0 0 0;
+  }
+  .price-hero .value span{ font-size:20px; color:var(--ink-soft); }
+
+  .empty{
+    text-align:center;
+    padding:30px 10px;
+    color:var(--ink-soft);
+    font-size:13.5px;
+  }
+
+  .toast{
+    position:fixed;
+    bottom:24px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--primary-dark);
+    color:#fff;
+    padding:12px 20px;
+    border-radius:8px;
+    font-size:13.5px;
+    font-weight:500;
+    box-shadow:var(--shadow);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s ease, transform .2s ease;
+    z-index:50;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .count-row{ display:flex; gap:14px; margin-bottom:16px; flex-wrap:wrap; }
+  .stat{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:14px 18px;
+    min-width:120px;
+    box-shadow:var(--shadow);
+  }
+  .stat .num{ font-family:'IBM Plex Mono', monospace; font-size:26px; font-weight:600; color:var(--primary); }
+  .stat .lbl{ font-size:11.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.4px; }
+
+  /* ---- Matriz de Ocupación ---- */
+  .matrix-table { width: 100%; border-collapse: collapse; font-size: 12.5px; text-align: center; }
+  .matrix-table th, .matrix-table td { padding: 8px 6px; border: 1px solid var(--line); vertical-align: middle; }
+  .matrix-table th { background: var(--bg); font-weight: 700; text-transform: uppercase; font-size: 11px; color: var(--ink-soft); }
+  
+  .slot-free { 
+    background: var(--ok-soft); 
+    color: var(--primary-dark); 
+    cursor: pointer; 
+    transition: all .15s ease; 
+    font-size: 11.5px; 
+    font-weight: 600; 
+  }
+  .slot-free:hover { background: #c5dfb5; transform: scale(1.02); }
+  
+  .slot-selected { 
+    background: var(--accent) !important; 
+    color: var(--primary-dark) !important; 
+    font-weight: 700; 
+    border: 2px solid var(--primary) !important; 
+  }
+
+  /* AMARILLO: Reservado */
+  .slot-reserved {
+    background: #FEF08A;
+    color: #713F12;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all .15s ease;
+  }
+  .slot-reserved:hover { background: #FDE047; transform: scale(1.02); }
+
+  /* VERDE FUERTE: Asistió / Ocupó */
+  .slot-occupied {
+    background: #15803D;
+    color: #FFFFFF;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  /* ROJO: No asistió / Pasó hora sin confirmación */
+  .slot-noshow {
+    background: #DC2626;
+    color: #FFFFFF;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .slot-passed { background: #EFEFEF; color: #999; font-size: 11px; }
+
+  /* Alerta de restricción de tiempo */
+  .time-warning-box {
+    background: var(--clay-soft);
+    color: var(--clay);
+    border: 1px solid #E5B3A6;
+    padding: 10px 12px;
+    border-radius: 7px;
+    font-size: 12.5px;
+    margin-bottom: 14px;
+    font-weight: 500;
+    line-height: 1.35;
+  }
+
+  @media print {
+  body * { visibility: hidden; }
+  #fact-print-area, #fact-print-area * { visibility: visible; }
+  #fact-print-area { position: absolute; left: 0; top: 0; width: 100%; }
+  nav, header .brand-row, .view-head, .btn-row, #fact-preview-card { display: none !important; }
+}
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand-row">
+    <div>
+      <div class="brand">Club<span>&nbsp;Set</span> Admin</div>
+      <div class="subtitle">Sistema de Gestión de Reservas y Uso de Pistas</div>
+    </div>
+  </div>
+  <div class="court-lines"></div>
+  <nav>
+    <button class="tab-btn active" data-view="pistas">Catálogo de Pistas</button>
+    <button class="tab-btn" data-view="precio">Precio por Hora</button>
+    <button class="tab-btn" data-view="socios">Socios</button>
+    <button class="tab-btn" data-view="reservas">Reservas</button>
+    <button class="tab-btn" data-view="facturacion">Facturación</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ===================== VISTA: PISTAS ===================== -->
+  <section id="view-pistas" class="view active">
+    <div class="view-head">
+      <div>
+        <h1>Catálogo de pistas</h1>
+        <p>Registro y visualización de las pistas del Club.</p>
+      </div>
+    </div>
+
+    <div class="count-row">
+      <div class="stat"><div class="num" id="stat-total">0</div><div class="lbl">Pistas registradas</div></div>
+      <div class="stat"><div class="num" id="stat-activas">0</div><div class="lbl">Activas</div></div>
+      <div class="stat"><div class="num" id="stat-inactivas">0</div><div class="lbl">Dadas de baja</div></div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Pistas del club</h2>
+        <table>
+          <thead>
+            <tr><th>Nombre / N°</th><th>Superficie</th><th>Estado</th><th></th></tr>
+          </thead>
+          <tbody id="pistas-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2 id="pista-form-title">Registrar nueva pista</h2>
+        <div class="form-msg" id="pista-msg"></div>
+        <form id="pista-form">
+          <div class="field">
+            <label for="pista-nombre">Nombre o número de pista</label>
+            <input type="text" id="pista-nombre" placeholder="Ej. Pista 6">
+          </div>
+          <div class="field">
+            <label for="pista-superficie">Superficie</label>
+            <input type="text" id="pista-superficie" placeholder="Ej. Tierra batida, Dura, Césped">
+          </div>
+          <div class="btn-row">
+            <button type="submit" class="btn btn-primary">Guardar pista</button>
+            <button type="button" class="btn btn-ghost" id="pista-cancel-edit" style="display:none;">Cancelar edición</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== VISTA: PRECIO ===================== -->
+  <section id="view-precio" class="view">
+    <div class="view-head">
+      <div>
+        <h1>Precio por hora de reserva</h1>
+        <p>Parametrización del precio vigente por hora.</p>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="price-hero">
+          <div class="label">Precio vigente por hora</div>
+          <div class="value" id="precio-actual">—</div>
+        </div>
+        <h2>Historial de cambios de precio</h2>
+        <table>
+          <thead>
+            <tr><th>Fecha</th><th>Precio anterior</th><th>Precio nuevo</th></tr>
+          </thead>
+          <tbody id="precio-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Modificar precio</h2>
+        <div class="form-msg" id="precio-msg"></div>
+        <form id="precio-form">
+          <div class="field">
+            <label for="precio-nuevo">Nuevo precio por hora (Bs.)</label>
+            <input type="number" id="precio-nuevo" min="0" step="0.5" placeholder="Ej. 45">
+          </div>
+          <button type="submit" class="btn btn-primary">Actualizar precio</button>
+        </form>
+
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px dashed var(--line);">
+          <h2>Tarifa Castigo</h2>
+          <button id="btn-show-castigo" class="btn btn-clay">Configurar Tarifa Castigo</button>
+          
+          <div id="castigo-section" style="display:none; margin-top: 15px;">
+            <div class="price-hero" style="padding-top:0; border:none;">
+              <div class="label">Tarifa Castigo Actual</div>
+              <div class="value" id="castigo-actual">Bs. 0.00</div>
+            </div>
+            <div class="form-msg" id="castigo-msg"></div>
+            <form id="castigo-form">
+              <div class="field">
+                <label for="castigo-nuevo">Monto (Bs.)</label>
+                <input type="number" id="castigo-nuevo" min="0" step="0.5" placeholder="Ej. 15">
+              </div>
+              <button type="submit" class="btn btn-sm btn-clay">Fijar Tarifa Castigo</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== VISTA: SOCIOS ===================== -->
+  <section id="view-socios" class="view">
+    <div class="view-head">
+      <div>
+        <h1>Gestión de Socios</h1>
+        <p>Registro, modificación y baja de miembros del club.</p>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Listado de Socios</h2>
+        <table>
+          <thead>
+            <tr><th>Nombre</th><th>CI</th><th>Teléfono</th><th>Estado</th><th></th></tr>
+          </thead>
+          <tbody id="socios-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2 id="socio-form-title">Registrar nuevo socio</h2>
+        <div class="form-msg" id="socio-msg"></div>
+        <form id="socio-form">
+          <div class="field">
+            <label for="socio-nombre">Nombre completo</label>
+            <input type="text" id="socio-nombre" placeholder="Ej. Juan Pérez">
+          </div>
+          <div class="field">
+            <label for="socio-ci">Carnet de Identidad (CI)</label>
+            <input type="text" id="socio-ci" placeholder="Ej. 1234567">
+          </div>
+          <div class="field">
+            <label for="socio-telefono">Teléfono / Celular</label>
+            <input type="text" id="socio-telefono" placeholder="Ej. 70012345">
+          </div>
+          <div class="btn-row">
+            <button type="submit" class="btn btn-primary">Guardar socio</button>
+            <button type="button" class="btn btn-ghost" id="socio-cancel-edit" style="display:none;">Cancelar edición</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== VISTA: RESERVAS ===================== -->
+  <section id="view-reservas" class="view">
+    <div class="view-head">
+      <div>
+        <h1>Gestión de Reservas</h1>
+        <p>Haz clic en una casilla libre para reservar, o sobre una casilla amarilla para confirmar la ocupación de la pista.</p>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- Tabla de Ocupación -->
+      <div class="card" style="overflow-x: auto;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
+          <h2 style="margin: 0; white-space: nowrap;">Ocupación de pistas en:</h2>
+          <input type="date" id="ocupacion-fecha" style="width: auto; font-weight: 600;">
+        </div>
+
+        <table class="matrix-table">
+          <thead>
+            <tr id="matrix-header">
+              <th style="width: 80px;">Hora</th>
+              <!-- Columnas dinámicas de pistas -->
+            </tr>
+          </thead>
+          <tbody id="matrix-tbody">
+            <!-- Filas dinámicas de horarios -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Panel Lateral: Formulario o Confirmación -->
+      <div class="card" id="side-panel">
+        <h2 id="side-panel-title">Panel de Reserva / Ocupación</h2>
+        <div class="form-msg" id="reserva-msg"></div>
+
+        <!-- Estado 0: Inicial / Sin Selección -->
+        <div id="panel-empty" class="empty" style="padding: 24px 10px; border: 1px dashed var(--line); border-radius: 8px;">
+          Haz clic en cualquier casilla <strong>Libre</strong> para hacer una reserva, o sobre un <strong>Nombre Reservado</strong> para confirmar asistencia.
+        </div>
+
+        <!-- Estado 1: Formulario Nueva Reserva -->
+        <div id="panel-new-reserva" style="display: none;">
+          <div style="background: var(--bg); padding: 14px; border-radius: 8px; border: 1px solid var(--line); margin-bottom: 16px;">
+            <div style="font-size: 11px; text-transform: uppercase; color: var(--ink-soft); font-weight: 700; letter-spacing: 0.5px;">Pista & Horario Seleccionado</div>
+            <div style="font-weight: 700; font-size: 16px; color: var(--primary-dark); margin-top: 4px;" id="slot-pista-lbl">-</div>
+            <div style="font-size: 13.5px; color: var(--ink); margin-top: 2px;" id="slot-detalle-lbl">-</div>
+          </div>
+
+          <form id="reserva-form">
+            <div class="field">
+              <label for="reserva-socio">Asignar Socio</label>
+              <select id="reserva-socio" required>
+                <!-- Opciones dinámicas -->
+              </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width:100%;">Confirmar Reserva</button>
+          </form>
+        </div>
+
+        <!-- Estado 2: Confirmar Ocupación de Pista -->
+        <div id="panel-confirm-occupancy" style="display: none;">
+          <div style="background: #FEF08A; padding: 16px; border-radius: 8px; border: 1px solid #FDE047; margin-bottom: 16px; color: #713F12;">
+            <div style="font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Estado Actual: Reservado</div>
+            <div style="font-weight: 700; font-size: 18px; color: #854D0E; margin-top: 4px;" id="confirm-socio-lbl">-</div>
+            <div style="font-size: 13.5px; margin-top: 4px; font-weight: 500;" id="confirm-detalle-lbl">-</div>
+          </div>
+
+          <!-- Mensaje de restricción cuando aún no es la hora -->
+          <div id="confirm-time-warning" class="time-warning-box" style="display: none;">
+            ⏱️ <strong>Aún no se puede confirmar.</strong><br>
+            Solo es posible confirmar la ocupación cuando sea la hora exacta de la reserva o falten 10 minutos o menos para el inicio.
+          </div>
+
+          <p id="confirm-prompt-text" style="font-size: 13.5px; color: var(--ink-soft); line-height: 1.4; margin-bottom: 20px;">
+            ¿El socio se presentó en el club y realizó la ocupación efectiva de la pista?
+          </p>
+
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <button type="button" id="btn-confirmar-asistencia" class="btn btn-success" style="width:100%;">
+              Confirmar Ocupación 
+            </button>
+            <button type="button" id="btn-cancelar-panel" class="btn btn-ghost" style="width:100%;">
+              Volver / Cancelar
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ===== Listado de Reservas (Noemí — SO03: cancelación) ===== -->
+    <div class="card" style="margin-top:24px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+        <h2 style="margin:0;">Listado de Reservas</h2>
+        <input type="text" id="reserva-buscar" placeholder="Buscar por nombre de socio..." style="width:auto; min-width:220px;">
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr><th>Socio</th><th>Pista</th><th>Fecha</th><th>Hora</th><th>Estado</th><th>Asistencia</th><th>Penalización</th><th></th></tr>
+          </thead>
+          <tbody id="reservas-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!--=====================VISTA:FACTURACIÓN =====================-->
+<!--===================== VISTA: FACTURACIÓN =====================-->
+<section id="view-facturacion" class="view">
+  <div class="view-head">
+    <div>
+      <h1>Emisión de Facturas</h1>
+      <p>Consolida el uso de pistas y penalizaciones del mes para generar el documento final.</p>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Parámetros de Facturación</h2>
+      <div class="field">
+        <label for="fact-socio">Socio</label>
+        <select id="fact-socio">
+          <option value="">Seleccione un socio activo...</option>
+        </select>
+      </div>
+      <div class="field" style="display:flex;gap:12px;">
+        <div style="flex:1;">
+          <label for="fact-mes">Mes</label>
+          <input type="number" id="fact-mes" min="1" max="12" value="7">
+        </div>
+        <div style="flex:1;">
+          <label for="fact-anio">Año</label>
+          <input type="number" id="fact-anio" min="2024" max="2030" value="2026">
+        </div>
+      </div>
+      <div class="btn-row" style="margin-top:10px;">
+        <button type="button" class="btn btn-primary" id="btn-calcular">Calcular Importe </button>
+        <button type="button" class="btn btn-success" id="btn-emitir">Emitir Factura </button>
+        <!-- Botón de Historial Agregado -->
+        <button type="button" class="btn btn-ghost" id="btn-historial">Historial Factura </button>
+      </div>
+      <div class="form-msg" id="fact-msg"></div>
+    </div>
+
+    <div class="card" id="fact-preview-card" style="display:none;">
+      <h2>Vista Previa del Cálculo</h2>
+      <div id="fact-preview-content"></div>
+    </div>
+  </div>
+
+  <!-- Nueva Tarjeta de Historial -->
+  <div class="card" id="fact-historial-card" style="display:none; margin-top:24px;">
+    <h2>Historial de Facturas del Socio</h2>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Periodo</th>
+            <th>Uso Pistas</th>
+            <th>No Ocupación</th>
+            <th>Penalización</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody id="fact-historial-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Documento Imprimible -->
+  <div class="card" id="fact-documento" style="display:none;margin-top:24px;">
+    <div id="fact-print-area" style="padding:20px;"></div>
+    <div class="btn-row" style="justify-content:center;margin-top:16px;">
+      <button class="btn btn-primary" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // 1. Guardar todos los datos en el navegador
+function guardarDatos() {
+  localStorage.setItem('club_pistas', JSON.stringify(pistas));
+  localStorage.setItem('club_socios', JSON.stringify(socios));
+  localStorage.setItem('club_reservas', JSON.stringify(reservas));
+  localStorage.setItem('club_precio', JSON.stringify(precioActual));
+  localStorage.setItem('club_historialPrecio', JSON.stringify(historialPrecio));
+  localStorage.setItem('club_tarifaCastigo', JSON.stringify(tarifaCastigo));
+  localStorage.setItem('club_facturas', JSON.stringify(facturas));
+}
+// 2. Cargar los datos guardados al abrir la página
+function cargarDatos() {
+  if (localStorage.getItem('club_pistas')) pistas = JSON.parse(localStorage.getItem('club_pistas'));
+  if (localStorage.getItem('club_socios')) socios = JSON.parse(localStorage.getItem('club_socios'));
+  if (localStorage.getItem('club_reservas')) reservas = JSON.parse(localStorage.getItem('club_reservas'));
+  if (localStorage.getItem('club_precio')) precioActual = JSON.parse(localStorage.getItem('club_precio'));
+  if (localStorage.getItem('club_historialPrecio')) historialPrecio = JSON.parse(localStorage.getItem('club_historialPrecio'));
+  if (localStorage.getItem('club_tarifaCastigo')) tarifaCastigo = JSON.parse(localStorage.getItem('club_tarifaCastigo'));
+  if (localStorage.getItem('club_facturas')) facturas = JSON.parse(localStorage.getItem('club_facturas'));
+}
+// ============================================================
+// ESTADO EN MEMORIA
+// ============================================================
+let pistas = [
+  { id: 1, nombre: "Pista 1", superficie: "Tierra batida", estado: "Activa" },
+  { id: 2, nombre: "Pista 2", superficie: "Tierra batida", estado: "Activa" },
+  { id: 3, nombre: "Pista 3", superficie: "Dura", estado: "Activa" },
+  { id: 4, nombre: "Pista 4", superficie: "Dura", estado: "Activa" },
+  { id: 5, nombre: "Pista 5", superficie: "Césped", estado: "Activa" },
+];
+let nextPistaId = 6;
+let editingPistaId = null;
+
+let precioActual = 40;
+let historialPrecio = [
+  { fecha: "01/03/2026", anterior: 35, nuevo: 38 },
+  { fecha: "01/05/2026", anterior: 38, nuevo: 40 },
+];
+let tarifaCastigo = 0;
+
+let socios = [
+  { id: 1, nombre: "Juan Pérez", ci: "1234567", telefono: "70012345", estado: "Activo" }
+];
+let nextSocioId = 2;
+let editingSocioId = null;
+
+let reservas = [];
+let nextReservaId = 1;
+
+let facturas = [];    // AD10/AD14 — facturas ya emitidas
+let nextFacturaId = 1;
+
+let selectedSlot = null; // Para nueva reserva: { fecha, pistaId, pistaNombre, hora }
+let selectedReservaToConfirm = null; // Para confirmar ocupación: objeto Reserva
+
+// Configuración de fechas
+const today = new Date();
+const tzOffset = today.getTimezoneOffset() * 60000;
+const localISOTimeToday = (new Date(today - tzOffset)).toISOString().split('T')[0];
+
+const maxDate = new Date(today);
+maxDate.setMonth(maxDate.getMonth() + 1);
+const localISOTimeMax = (new Date(maxDate - tzOffset)).toISOString().split('T')[0];
+
+const ocupacionFechaInput = document.getElementById("ocupacion-fecha");
+ocupacionFechaInput.value = localISOTimeToday;
+ocupacionFechaInput.max = localISOTimeMax;
+
+// ============================================================
+// NAVEGACIÓN
+// ============================================================
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("view-" + btn.dataset.view).classList.add("active");
+  });
+});
+
+function showToast(text){
+  const t = document.getElementById("toast");
+  t.textContent = text;
+  t.className = "toast show";
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => { t.className = "toast"; }, 2600);
+}
+
+function showMsg(elId, text, ok=true){
+  const el = document.getElementById(elId);
+  el.textContent = text;
+  el.className = "form-msg show " + (ok ? "ok" : "err");
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.className = "form-msg"; }, 3200);
+}
+
+// ============================================================
+// PISTAS
+// ============================================================
+function renderPistas(){
+  const tbody = document.getElementById("pistas-tbody");
+  tbody.innerHTML = "";
+
+  if (pistas.length === 0){
+    tbody.innerHTML = `<tr><td colspan="4"><div class="empty">Aún no hay pistas registradas.</div></td></tr>`;
+  } else {
+    pistas.forEach(p => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><strong>${p.nombre}</strong></td>
+        <td>${p.superficie}</td>
+        <td><span class="badge ${p.estado === "Activa" ? "activa" : "inactiva"}">${p.estado}</span></td>
+        <td>
+          <div class="btn-row">
+            <button class="btn btn-ghost btn-sm" onclick="editPista(${p.id})">Modificar</button>
+            ${p.estado === "Activa"
+              ? `<button class="btn btn-clay btn-sm" onclick="toggleBaja(${p.id})">Dar de baja</button>`
+              : `<button class="btn btn-ghost btn-sm" onclick="toggleBaja(${p.id})">Reactivar</button>`}
+          </div>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  const total = pistas.length;
+  const activas = pistas.filter(p => p.estado === "Activa").length;
+  document.getElementById("stat-total").textContent = total;
+  document.getElementById("stat-activas").textContent = activas;
+  document.getElementById("stat-inactivas").textContent = total - activas;
+  renderMatrix();
+}
+
+document.getElementById("pista-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const nombreInput = document.getElementById("pista-nombre");
+  const superficieInput = document.getElementById("pista-superficie");
+  const nombre = nombreInput.value.trim();
+  const superficie = superficieInput.value.trim();
+
+  if (!nombre){
+    showMsg("pista-msg", "El nombre o número de la pista es obligatorio.", false);
+    return;
+  }
+  const duplicada = pistas.some(p => p.nombre.toLowerCase() === nombre.toLowerCase() && p.id !== editingPistaId);
+  if (duplicada){
+    showMsg("pista-msg", "Ya existe una pista registrada con ese nombre.", false);
+    return;
+  }
+
+  if (editingPistaId){
+    const p = pistas.find(p => p.id === editingPistaId);
+    p.nombre = nombre;
+    p.superficie = superficie || p.superficie;
+    showMsg("pista-msg", `Pista "${nombre}" actualizada correctamente.`);
+    showToast(`Pista "${nombre}" modificada`);
+    cancelEditPista();
+  } else {
+    pistas.push({ id: nextPistaId++, nombre, superficie: superficie || "No especificada", estado: "Activa" });
+    showMsg("pista-msg", `Pista "${nombre}" registrada correctamente.`);
+    showToast(`Pista "${nombre}" registrada`);
+    nombreInput.value = "";
+    superficieInput.value = "";
+  }
+  renderPistas();
+});
+
+function editPista(id){
+  const p = pistas.find(p => p.id === id);
+  if (!p) return;
+  editingPistaId = id;
+  document.getElementById("pista-nombre").value = p.nombre;
+  document.getElementById("pista-superficie").value = p.superficie;
+  document.getElementById("pista-form-title").textContent = `Modificando: ${p.nombre}`;
+  document.getElementById("pista-cancel-edit").style.display = "inline-block";
+}
+
+function cancelEditPista(){
+  editingPistaId = null;
+  document.getElementById("pista-form-title").textContent = "Registrar nueva pista";
+  document.getElementById("pista-cancel-edit").style.display = "none";
+  document.getElementById("pista-form").reset();
+}
+document.getElementById("pista-cancel-edit").addEventListener("click", cancelEditPista);
+
+function toggleBaja(id){
+  const p = pistas.find(p => p.id === id);
+  if (!p) return;
+  p.estado = p.estado === "Activa" ? "Inactiva" : "Activa";
+  showToast(p.estado === "Activa" ? `Pista "${p.nombre}" reactivada` : `Pista "${p.nombre}" dada de baja`);
+  renderPistas();
+}
+
+// ============================================================
+// PRECIO Y CASTIGO
+// ============================================================
+function renderPrecio(){
+  document.getElementById("precio-actual").innerHTML = `Bs. ${precioActual.toFixed(2)} <span>/ hora</span>`;
+  const tbody = document.getElementById("precio-tbody");
+  tbody.innerHTML = "";
+  [...historialPrecio].reverse().forEach(h => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td class="mono">${h.fecha}</td><td class="mono">Bs. ${h.anterior.toFixed(2)}</td><td class="mono"><strong>Bs. ${h.nuevo.toFixed(2)}</strong></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+document.getElementById("precio-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const input = document.getElementById("precio-nuevo");
+  const val = parseFloat(input.value);
+  if (isNaN(val) || val <= 0) return showMsg("precio-msg", "Precio inválido.", false);
+  
+  const h = new Date();
+  historialPrecio.push({ fecha: String(h.getDate()).padStart(2,"0")+"/"+String(h.getMonth()+1).padStart(2,"0")+"/"+h.getFullYear(), anterior: precioActual, nuevo: val });
+  precioActual = val;
+  showToast(`Precio actualizado`);
+  input.value = "";
+  renderPrecio();
+});
+
+document.getElementById("btn-show-castigo").addEventListener("click", () => {
+  document.getElementById("castigo-section").style.display = "block";
+  document.getElementById("btn-show-castigo").style.display = "none";
+  renderCastigo();
+});
+function renderCastigo(){ document.getElementById("castigo-actual").innerHTML = `Bs. ${tarifaCastigo.toFixed(2)}`; }
+
+document.getElementById("castigo-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const input = document.getElementById("castigo-nuevo");
+  const val = parseFloat(input.value);
+  if (isNaN(val) || val < 0){
+    showMsg("castigo-msg", "Ingresa un monto válido (mayor o igual a 0).", false);
+    return;
+  }
+  tarifaCastigo = val;
+  guardarDatos();
+  showMsg("castigo-msg", `Tarifa mínima de penalización actualizada a Bs. ${val.toFixed(2)}.`);
+  showToast(`Tarifa castigo actualizada`);
+  input.value = "";
+  renderCastigo();
+});
+
+// ============================================================
+// SOCIOS
+// ============================================================
+function renderSocios(){
+  const tbody = document.getElementById("socios-tbody");
+  tbody.innerHTML = "";
+  if (socios.length === 0){
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty">Aún no hay socios registrados.</div></td></tr>`;
+  } else {
+    socios.forEach(s => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><strong>${s.nombre}</strong></td><td>${s.ci}</td><td>${s.telefono}</td>
+        <td><span class="badge ${s.estado === 'Activo' ? 'activa' : 'inactiva'}">${s.estado}</span></td>
+        <td>
+          <div class="btn-row">
+            <button class="btn btn-ghost btn-sm" onclick="editSocio(${s.id})">Modificar</button>
+            ${s.estado === 'Activo'
+              ? `<button class="btn btn-clay btn-sm" onclick="toggleBajaSocio(${s.id})">Baja</button>`
+              : `<button class="btn btn-ghost btn-sm" onclick="toggleBajaSocio(${s.id})">Reactivar</button>`}
+          </div>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+  }
+  updateSocioSelect();
+  renderFactSocioSelect();
+}
+
+document.getElementById("socio-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const nombre = document.getElementById("socio-nombre").value.trim();
+  const ci = document.getElementById("socio-ci").value.trim();
+  const tel = document.getElementById("socio-telefono").value.trim();
+  if (!nombre || !ci) return showMsg("socio-msg", "Nombre y CI son obligatorios.", false);
+
+  if (editingSocioId){
+    const s = socios.find(x => x.id === editingSocioId);
+    s.nombre = nombre; s.ci = ci; s.telefono = tel || s.telefono;
+    cancelEditSocio();
+    showToast(`Socio modificado`);
+  } else {
+    socios.push({ id: nextSocioId++, nombre, ci, telefono: tel || "N/A", estado: "Activo" });
+    document.getElementById("socio-form").reset();
+    showToast(`Socio registrado`);
+  }
+  renderSocios();
+});
+
+function editSocio(id){
+  const s = socios.find(x => x.id === id);
+  if (!s) return;
+  editingSocioId = id;
+  document.getElementById("socio-nombre").value = s.nombre;
+  document.getElementById("socio-ci").value = s.ci;
+  document.getElementById("socio-telefono").value = s.telefono !== "N/A" ? s.telefono : "";
+  document.getElementById("socio-form-title").textContent = `Modificando: ${s.nombre}`;
+  document.getElementById("socio-cancel-edit").style.display = "inline-block";
+}
+
+function cancelEditSocio(){
+  editingSocioId = null;
+  document.getElementById("socio-form-title").textContent = "Registrar nuevo socio";
+  document.getElementById("socio-cancel-edit").style.display = "none";
+  document.getElementById("socio-form").reset();
+}
+document.getElementById("socio-cancel-edit").addEventListener("click", cancelEditSocio);
+
+function toggleBajaSocio(id){
+  const s = socios.find(x => x.id === id);
+  s.estado = s.estado === "Activo" ? "Inactivo" : "Activo";
+  renderSocios();
+}
+
+function updateSocioSelect() {
+  const selectSocio = document.getElementById("reserva-socio");
+  selectSocio.innerHTML = '<option value="">Seleccione un socio...</option>';
+  socios.filter(s => s.estado === 'Activo').forEach(s => {
+    selectSocio.innerHTML += `<option value="${s.id}">${s.nombre} (CI: ${s.ci})</option>`;
+  });
+}
+
+// ============================================================
+// MATRIZ DE RESERVAS Y PANEL DE CONTROL
+// ============================================================
+ocupacionFechaInput.addEventListener("change", () => {
+  resetPanel();
+  renderMatrix();
+});
+
+function renderMatrix() {
+  const headerRow = document.getElementById("matrix-header");
+  const tbody = document.getElementById("matrix-tbody");
+  const fechaSel = ocupacionFechaInput.value;
+
+  const pistasActivas = pistas.filter(p => p.estado === 'Activa');
+  headerRow.innerHTML = `<th style="width: 80px;">Hora</th>`;
+  
+  if (pistasActivas.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="100%"><div class="empty">No hay pistas activas registradas.</div></td></tr>`;
+    return;
+  }
+
+  pistasActivas.forEach(p => {
+    headerRow.innerHTML += `<th>${p.nombre}<br><span style="font-size:10px; opacity:0.8; font-weight:400;">${p.superficie}</span></th>`;
+  });
+
+  const now = new Date();
+  const currentHour = now.getHours();
+
+  tbody.innerHTML = "";
+  const reservasDelDia = reservas.filter(r => r.estado === 'Activa' && r.fecha === fechaSel);
+
+  for (let hora = 6; hora <= 22; hora++) {
+    let tr = document.createElement("tr");
+    const horaLabel = `${String(hora).padStart(2,'0')}:00`;
+    tr.innerHTML = `<td class="mono" style="font-weight:600; background:var(--bg);">${horaLabel}</td>`;
+
+    const isPastSlot = (fechaSel < localISOTimeToday) || (fechaSel === localISOTimeToday && hora < currentHour);
+
+    pistasActivas.forEach(pista => {
+      const res = reservasDelDia.find(r => r.pistaId === pista.id && hora >= r.horaInicio && hora < r.horaFin);
+
+      if (res) {
+        if (res.asistencia === 'asistio') {
+          // VERDE FUERTE: Socio asistió
+          tr.innerHTML += `<td class="slot-occupied" title="Ocupación confirmada">
+            <strong>${res.socioNombre}</strong><br><span style="font-size:9.5px; opacity:0.9;">✓ Ocupado</span>
+          </td>`;
+        } else if (isPastSlot) {
+          // ROJO: Pasó la hora sin confirmación
+          tr.innerHTML += `<td class="slot-noshow" title="Hora transcurrida sin confirmación de asistencia">
+            <strong>${res.socioNombre}</strong><br><span style="font-size:9.5px; opacity:0.9;">Sin Ocupar</span>
+          </td>`;
+        } else {
+          // AMARILLO: Reservado -> Al hacer clic abre confirmación en panel lateral
+          const isSelected = selectedReservaToConfirm && selectedReservaToConfirm.id === res.id;
+          const selectBorder = isSelected ? 'border:2px solid #854D0E !important;' : '';
+
+          tr.innerHTML += `<td class="slot-reserved" style="${selectBorder}" onclick="seleccionarParaConfirmar(${res.id})" title="Haz clic para verificar y confirmar ocupación">
+            <strong>${res.socioNombre}</strong><br><span style="font-size:9.5px; opacity:0.85;">Reservado</span>
+          </td>`;
+        }
+      } else {
+        if (isPastSlot) {
+          // GRIS: Hora pasada
+          tr.innerHTML += `<td class="slot-passed">—</td>`;
+        } else {
+          // VERDE CLARO: Libre
+          const isSelected = selectedSlot && selectedSlot.fecha === fechaSel && selectedSlot.pistaId === pista.id && selectedSlot.hora === hora;
+          const activeClass = isSelected ? 'slot-selected' : 'slot-free';
+          const labelText = isSelected ? 'SELECCIONADO' : 'Libre';
+
+          tr.innerHTML += `<td class="${activeClass}" onclick="seleccionarSlotLibre(${pista.id}, '${pista.nombre}', ${hora})">${labelText}</td>`;
+        }
+      }
+    });
+
+    tbody.appendChild(tr);
+  }
+}
+
+// Función que valida si se puede confirmar según la hora actual
+function puedeConfirmarReserva(res) {
+  const now = new Date();
+  const [year, month, day] = res.fecha.split("-").map(Number);
+  
+  const horaInicio = new Date(year, month - 1, day, res.horaInicio, 0, 0);
+  const horaFin = new Date(year, month - 1, day, res.horaFin, 0, 0);
+
+  // Diferencia en minutos para el inicio de la reserva
+  const diffMs = horaInicio.getTime() - now.getTime();
+  const diffMin = diffMs / (1000 * 60);
+
+  // Condición:
+  // 1. Faltan 10 minutos o menos para el inicio (diffMin <= 10 y diffMin >= 0)
+  // 2. O la hora actual ya está dentro del turno reservado (now >= horaInicio y now < horaFin)
+  const esFaltanteDiezMin = (diffMin <= 10 && diffMin >= 0);
+  const esHoraActual = (now >= horaInicio && now < horaFin);
+
+  return esFaltanteDiezMin || esHoraActual;
+}
+
+// Acciones del Panel Lateral
+function resetPanel() {
+  selectedSlot = null;
+  selectedReservaToConfirm = null;
+
+  document.getElementById("side-panel-title").textContent = "Panel de Reserva / Ocupación";
+  document.getElementById("panel-empty").style.display = "block";
+  document.getElementById("panel-new-reserva").style.display = "none";
+  document.getElementById("panel-confirm-occupancy").style.display = "none";
+}
+
+// Clic en casilla LIBRE -> Abrir formulario Nueva Reserva en el panel
+function seleccionarSlotLibre(pistaId, pistaNombre, hora) {
+  selectedReservaToConfirm = null;
+  const fecha = ocupacionFechaInput.value;
+  selectedSlot = { fecha, pistaId, pistaNombre, hora };
+
+  document.getElementById("side-panel-title").textContent = "Nueva Reserva";
+  document.getElementById("panel-empty").style.display = "none";
+  document.getElementById("panel-confirm-occupancy").style.display = "none";
+  document.getElementById("panel-new-reserva").style.display = "block";
+
+  const [yyyy, mm, dd] = selectedSlot.fecha.split("-");
+  document.getElementById("slot-pista-lbl").textContent = selectedSlot.pistaNombre;
+  document.getElementById("slot-detalle-lbl").textContent = `Fecha: ${dd}/${mm}/${yyyy} | Horario: ${String(selectedSlot.hora).padStart(2,'0')}:00 - ${String(selectedSlot.hora + 1).padStart(2,'0')}:00`;
+
+  renderMatrix();
+}
+
+// Clic en casilla RESERVADA (Amarilla) -> Abrir Confirmación de Ocupación con validación de tiempo
+function seleccionarParaConfirmar(reservaId) {
+  selectedSlot = null;
+  const res = reservas.find(r => r.id === reservaId);
+  if (!res) return;
+
+  selectedReservaToConfirm = res;
+
+  document.getElementById("side-panel-title").textContent = "Confirmación de Ocupación";
+  document.getElementById("panel-empty").style.display = "none";
+  document.getElementById("panel-new-reserva").style.display = "none";
+  document.getElementById("panel-confirm-occupancy").style.display = "block";
+
+  const [yyyy, mm, dd] = res.fecha.split("-");
+  document.getElementById("confirm-socio-lbl").textContent = res.socioNombre;
+  document.getElementById("confirm-detalle-lbl").textContent = `${res.pistaNombre} | ${dd}/${mm}/${yyyy} | ${String(res.horaInicio).padStart(2,'0')}:00 hrs`;
+
+  // Evaluación del tiempo
+  const sePuede = puedeConfirmarReserva(res);
+  const btnConfirmar = document.getElementById("btn-confirmar-asistencia");
+  const warningBox = document.getElementById("confirm-time-warning");
+  const promptText = document.getElementById("confirm-prompt-text");
+
+  if (sePuede) {
+    btnConfirmar.disabled = false;
+    btnConfirmar.style.opacity = "1";
+    btnConfirmar.style.cursor = "pointer";
+    warningBox.style.display = "none";
+    promptText.style.display = "block";
+  } else {
+    btnConfirmar.disabled = true;
+    btnConfirmar.style.opacity = "0.4";
+    btnConfirmar.style.cursor = "not-allowed";
+    warningBox.style.display = "block";
+    promptText.style.display = "none";
+  }
+
+  renderMatrix();
+}
+
+// Botón de Confirmación en el Panel
+document.getElementById("btn-confirmar-asistencia").addEventListener("click", () => {
+  if (!selectedReservaToConfirm) return;
+
+  // Validación de seguridad adicional al hacer clic
+  if (!puedeConfirmarReserva(selectedReservaToConfirm)) {
+    showMsg("reserva-msg", "Solo puedes confirmar la ocupación cuando falten 10 min o sea la hora exacta.", false);
+    return;
+  }
+
+  selectedReservaToConfirm.asistencia = 'asistio';
+  guardarDatos();
+  showMsg("reserva-msg", `Se confirmó la ocupación de la pista para ${selectedReservaToConfirm.socioNombre}.`);
+  showToast(`Ocupación confirmada para ${selectedReservaToConfirm.socioNombre}`);
+
+  resetPanel();
+  renderMatrix();
+  aplicarFiltroReservas();
+});
+
+document.getElementById("btn-cancelar-panel").addEventListener("click", () => {
+  resetPanel();
+  renderMatrix();
+});
+
+// Submit Formulario Nueva Reserva
+document.getElementById("reserva-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (!selectedSlot) return;
+
+  const socioId = document.getElementById("reserva-socio").value;
+  if (!socioId) return showMsg("reserva-msg", "Por favor selecciona un socio.", false);
+
+  const socio = socios.find(s => s.id === parseInt(socioId));
+
+  reservas.push({
+    id: nextReservaId++,
+    fecha: selectedSlot.fecha,
+    horaInicio: selectedSlot.hora,
+    horaFin: selectedSlot.hora + 1,
+    duracion: 1,
+    pistaId: selectedSlot.pistaId,
+    pistaNombre: selectedSlot.pistaNombre,
+    socioId: socio.id,
+    socioNombre: socio.nombre,
+    estado: 'Activa',
+    asistencia: 'pendiente'
+  });
+
+  guardarDatos();
+  showMsg("reserva-msg", `Reserva guardada para ${socio.nombre}.`);
+  showToast("Reserva realizada");
+
+  resetPanel();
+  renderMatrix();
+  aplicarFiltroReservas();
+});
+
+// ============================================================
+// LISTADO DE RESERVAS + CANCELACIÓN (Noemí — Historia SO03)
+// ============================================================
+function formatFechaListado(fechaStr){
+  // fechaStr viene como "YYYY-MM-DD"; se formatea sin desfases de zona horaria
+  const [y, m, d] = fechaStr.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+function badgeAsistencia(r){
+  if (r.estado !== 'Activa') return `<span class="badge inactiva">—</span>`;
+  if (r.asistencia === 'asistio') return `<span class="badge activa">Ocupada</span>`;
+  return `<span class="badge inactiva">Pendiente</span>`;
+}
+
+// SO03 — Una reserva NO se puede cancelar si es para el mismo día
+function esMismoDiaReserva(fechaStr){
+  return fechaStr === localISOTimeToday;
+}
+
+// AD03 — Importe de la penalización por cancelar: nunca por debajo de la tarifa mínima de castigo
+function calcularPenalizacion(res){
+  const importeNormal = precioActual * res.duracion;
+  return Math.max(importeNormal, tarifaCastigo);
+}
+
+function motivoNoCancelable(r){
+  if (r.asistencia === 'asistio') return "Ya ocupada";
+  if (esMismoDiaReserva(r.fecha)) return "No cancelable (mismo día)";
+  return "";
+}
+
+function renderReservasListado(lista){
+  const tbody = document.getElementById("reservas-tbody");
+  if (!tbody) return;
+
+  tbody.innerHTML = lista.length ? [...lista].reverse().map(r => {
+    const puedeCancelar = r.estado === 'Activa' && r.asistencia !== 'asistio' && !esMismoDiaReserva(r.fecha);
+    const penalizacionTxt = r.estado === 'Cancelada'
+      ? `Bs. ${(r.penalizacion ?? 0).toFixed(2)}`
+      : "—";
+    return `
+      <tr>
+        <td>${r.socioNombre}</td>
+        <td>${r.pistaNombre}</td>
+        <td class="mono">${formatFechaListado(r.fecha)}</td>
+        <td class="mono">${String(r.horaInicio).padStart(2,'0')}:00</td>
+        <td><span class="badge ${r.estado === 'Activa' ? 'activa' : 'inactiva'}">${r.estado}</span></td>
+        <td>${badgeAsistencia(r)}</td>
+        <td class="mono">${penalizacionTxt}</td>
+        <td>
+          ${puedeCancelar
+            ? `<button class="btn btn-clay btn-sm" onclick="cancelarReserva(${r.id})">Cancelar</button>`
+            : (r.estado === 'Activa' ? `<span style="font-size:11.5px; color:var(--ink-soft);">${motivoNoCancelable(r)}</span>` : "")}
+        </td>
+      </tr>
+    `;
+  }).join("") : `<tr><td colspan="8"><div class="empty">No hay reservas registradas.</div></td></tr>`;
+}
+
+function aplicarFiltroReservas(){
+  const buscador = document.getElementById("reserva-buscar");
+  const q = buscador ? buscador.value.trim().toLowerCase() : "";
+  let lista = reservas;
+
+  if (q){
+    lista = lista.filter(r => r.socioNombre.toLowerCase().includes(q));
+  }
+  renderReservasListado(lista);
+}
+
+const reservaBuscarInput = document.getElementById("reserva-buscar");
+if (reservaBuscarInput) reservaBuscarInput.addEventListener("input", aplicarFiltroReservas);
+
+// SO03 — Cancelar reserva: libera la pista en el calendario y refresca la tabla sin recargar
+function cancelarReserva(id){
+  const res = reservas.find(r => r.id === id);
+  if (!res) return;
+
+  if (res.estado !== 'Activa') return;
+
+  // SO03 — Regla de negocio: no se puede cancelar una reserva para el mismo día
+  if (esMismoDiaReserva(res.fecha)){
+    showMsg("reserva-msg", "No se puede cancelar una reserva para el mismo día.", false);
+    showToast("No se puede cancelar: la reserva es para hoy", true);
+    return;
+  }
+
+  const penalizacion = calcularPenalizacion(res);
+
+  if (!confirm(`¿Cancelar la reserva de ${res.socioNombre} (${res.pistaNombre}, ${formatFechaListado(res.fecha)} ${String(res.horaInicio).padStart(2,'0')}:00)?\n\nSe aplicará una penalización de Bs. ${penalizacion.toFixed(2)} en la próxima factura.`)) return;
+
+  res.estado = 'Cancelada';
+  res.penalizacion = penalizacion;          // AD03 — importe de penalización aplicado (queda fijo aunque luego cambie la tarifa)
+  res.fechaCancelacion = new Date().toISOString();
+  guardarDatos();
+
+  // Si la reserva cancelada estaba seleccionada en el panel lateral, se limpia
+  if (selectedReservaToConfirm && selectedReservaToConfirm.id === res.id) resetPanel();
+
+  showMsg("reserva-msg", `Reserva de ${res.socioNombre} cancelada. Penalización aplicada: Bs. ${penalizacion.toFixed(2)}.`);
+  showToast(`Reserva cancelada — penalización Bs. ${penalizacion.toFixed(2)}`);
+
+  renderMatrix();        // libera automáticamente la pista en el calendario
+  aplicarFiltroReservas(); // actualiza la tabla sin recargar la página
+}
+
+
+// ============================================================
+// FACTURACIÓN (AD08–AD11 / HU12–HU14)
+// ============================================================
+function renderFactSocioSelect(){
+  const sel = document.getElementById("fact-socio");
+  if (!sel) return;
+  const seleccionActual = sel.value;
+  sel.innerHTML = `<option value="">Seleccione un socio activo...</option>` +
+    socios.filter(s => s.estado === 'Activo')
+          .map(s => `<option value="${s.id}">${s.nombre} (CI: ${s.ci})</option>`)
+          .join("");
+  if (seleccionActual) sel.value = seleccionActual;
+}
+
+// Una reserva "terminó" cuando ya pasó la hora de fin de su bloque
+function estaFinalizadaReserva(r){
+  const fin = new Date(`${r.fecha}T${String(r.horaFin).padStart(2,'0')}:00:00`);
+  return fin < new Date();
+}
+
+// AD08/AD09 + regla especial del enunciado:
+// "La primera 'no ocupación' de una pista durante un año natural no se
+//  carga a la factura del socio; el resto se cargan como si se hubiera usado."
+// Para saberlo, hace falta mirar TODAS las no-ocupaciones del socio en el
+// año (no solo el mes que se está facturando) y quedarnos con la más antigua.
+// HU13 — penalizaciones por cancelación + no-shows automáticos
+function calcularPenalizacionesDelPeriodo(reservasDelPeriodo){
+  const canceladas = reservasDelPeriodo.filter(r => r.estado === 'Cancelada');
+  const subtotalCanceladas = canceladas.reduce((s, r) => s + (r.penalizacion ?? tarifaCastigo), 0);
+  const noShows = reservasDelPeriodo.filter(r =>
+    r.estado === 'Activa' && r.asistencia !== 'asistio' && estaFinalizadaReserva(r)
+  );
+  return { canceladas, subtotalCanceladas, noShows };
+}
+
+function calcularFactura(socioId, mes, anio){
+  const socio = socios.find(s => s.id === socioId);
+  const reservasSocio = reservas.filter(r => r.socioId === socioId);
+
+  const delPeriodo = reservasSocio.filter(r => {
+    const [y, m] = r.fecha.split("-").map(Number);
+    return y === anio && m === mes;
+  });
+
+  // --- AD08: uso efectivo confirmado ---
+  const usadas = delPeriodo.filter(r => r.estado === 'Activa' && r.asistencia === 'asistio');
+  const lineasUso = usadas.map(r => ({
+    tipo: "uso",
+    concepto: `Uso de pista — ${r.pistaNombre} — ${formatFechaListado(r.fecha)} ${String(r.horaInicio).padStart(2,'0')}:00`,
+    monto: precioActual
+  }));
+  const subtotalUso = lineasUso.reduce((s, l) => s + l.monto, 0);
+
+  // --- No ocupación: primera del año natural exenta, el resto se cobra como uso ---
+  const noShowsDelAnio = reservasSocio
+    .filter(r => r.estado === 'Activa' && r.asistencia !== 'asistio' && estaFinalizadaReserva(r))
+    .filter(r => Number(r.fecha.split("-")[0]) === anio)
+    .sort((a, b) => (a.fecha + String(a.horaInicio).padStart(2,'0')).localeCompare(b.fecha + String(b.horaInicio).padStart(2,'0')));
+
+  const primeraNoShowIdDelAnio = noShowsDelAnio.length ? noShowsDelAnio[0].id : null;
+
+  const noShowsDelPeriodo = delPeriodo.filter(r => r.estado === 'Activa' && r.asistencia !== 'asistio' && estaFinalizadaReserva(r));
+  const lineasNoOcupacion = noShowsDelPeriodo.map(r => {
+    const esLaExenta = r.id === primeraNoShowIdDelAnio;
+    return {
+      tipo: "no_ocupacion",
+      concepto: esLaExenta
+        ? `No ocupación (1ª del año, exenta) — ${r.pistaNombre} — ${formatFechaListado(r.fecha)} ${String(r.horaInicio).padStart(2,'0')}:00`
+        : `No ocupación (se factura como uso) — ${r.pistaNombre} — ${formatFechaListado(r.fecha)} ${String(r.horaInicio).padStart(2,'0')}:00`,
+      monto: esLaExenta ? 0 : precioActual
+    };
+  });
+  const subtotalNoOcupacion = lineasNoOcupacion.reduce((s, l) => s + l.monto, 0);
+
+  // --- AD03/AD09: cancelaciones, con el importe ya congelado al momento de cancelar ---
+  const canceladas = delPeriodo.filter(r => r.estado === 'Cancelada');
+  const lineasPenalizacion = canceladas.map(r => ({
+    tipo: "penalizacion",
+    concepto: `Penalización por cancelación — ${r.pistaNombre} — ${formatFechaListado(r.fecha)} ${String(r.horaInicio).padStart(2,'0')}:00`,
+    monto: r.penalizacion ?? tarifaCastigo
+  }));
+  const subtotalPenalizaciones = lineasPenalizacion.reduce((s, l) => s + l.monto, 0);
+
+  const total = subtotalUso + subtotalNoOcupacion + subtotalPenalizaciones;
+
+  return {
+    socio, mes, anio,
+    lineas: [...lineasUso, ...lineasNoOcupacion, ...lineasPenalizacion],
+    subtotalUso, subtotalNoOcupacion, subtotalPenalizaciones, total
+  };
+}
+
+function mostrarPreviewFactura(calc){
+  const card = document.getElementById("fact-preview-card");
+  const content = document.getElementById("fact-preview-content");
+
+  content.innerHTML = `
+    <table>
+      <thead><tr><th>Concepto</th><th>Monto</th></tr></thead>
+      <tbody>
+        ${calc.lineas.length
+          ? calc.lineas.map(l => `<tr><td>${l.concepto}</td><td class="mono">Bs. ${l.monto.toFixed(2)}</td></tr>`).join("")
+          : `<tr><td colspan="2"><div class="empty">Sin movimientos en este periodo.</div></td></tr>`}
+      </tbody>
+    </table>
+    <div style="margin-top:16px; padding-top:16px; border-top:1px dashed var(--line); font-size:14px;">
+      <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>Subtotal uso de pistas</span><strong class="mono">Bs. ${calc.subtotalUso.toFixed(2)}</strong></div>
+      <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>Subtotal no ocupación</span><strong class="mono">Bs. ${calc.subtotalNoOcupacion.toFixed(2)}</strong></div>
+      <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>Subtotal penalizaciones por cancelación</span><strong class="mono">Bs. ${calc.subtotalPenalizaciones.toFixed(2)}</strong></div>
+      <div style="display:flex; justify-content:space-between; font-size:18px; margin-top:8px; padding-top:8px; border-top:1px solid var(--line);">
+        <span>Total</span><strong class="mono" style="color:var(--primary);">Bs. ${calc.total.toFixed(2)}</strong>
+      </div>
+    </div>
+  `;
+  card.style.display = "block";
+}
+
+function renderDocumentoFactura(f){
+  const area = document.getElementById("fact-print-area");
+  const doc = document.getElementById("fact-documento");
+  const fechaEmisionStr = new Date(f.fechaEmision).toLocaleDateString('es-BO');
+
+  area.innerHTML = `
+    <div style="text-align:center; margin-bottom:20px;">
+      <div style="font-family:'Anton',sans-serif; font-size:24px; color:var(--primary-dark); text-transform:uppercase;">Club Set — Factura</div>
+      <div style="color:var(--ink-soft); font-size:13px;">Factura N.º ${f.id} · Periodo ${String(f.mes).padStart(2,'0')}/${f.anio} · Emitida el ${fechaEmisionStr}</div>
+    </div>
+    <div style="margin-bottom:16px;"><strong>Socio:</strong> ${f.socioNombre}</div>
+    <table>
+      <thead><tr><th>Concepto</th><th>Monto</th></tr></thead>
+      <tbody>
+        ${f.lineas.length
+          ? f.lineas.map(l => `<tr><td>${l.concepto}</td><td class="mono">Bs. ${l.monto.toFixed(2)}</td></tr>`).join("")
+          : `<tr><td colspan="2">Sin movimientos en este periodo.</td></tr>`}
+      </tbody>
+    </table>
+    <div style="text-align:right; margin-top:16px; font-size:18px;">
+      <strong>Total a pagar: <span class="mono" style="color:var(--primary);">Bs. ${f.total.toFixed(2)}</span></strong>
+    </div>
+  `;
+  doc.style.display = "block";
+}
+
+function leerParametrosFactura(){
+  const socioId = parseInt(document.getElementById("fact-socio").value);
+  const mes = parseInt(document.getElementById("fact-mes").value);
+  const anio = parseInt(document.getElementById("fact-anio").value);
+
+  if (!socioId){ showMsg("fact-msg", "Selecciona un socio.", false); return null; }
+  if (!mes || mes < 1 || mes > 12){ showMsg("fact-msg", "El mes debe estar entre 1 y 12.", false); return null; }
+  if (!anio || anio < 2000){ showMsg("fact-msg", "Ingresa un año válido.", false); return null; }
+
+  return { socioId, mes, anio };
+}
+
+// HU12 — Calcular importe (solo vista previa, no emite nada)
+// HU12 — Calcular importe (solo vista previa, no emite nada)
+document.getElementById("btn-calcular").addEventListener("click", () => {
+  const params = leerParametrosFactura();
+  if (!params) return;
+
+  const calc = calcularFactura(params.socioId, params.mes, params.anio);
+  mostrarPreviewFactura(calc);
+  document.getElementById("fact-historial-card").style.display = "none"; // Ocultar historial si estaba abierto
+  showMsg("fact-msg", `Importe calculado para ${calc.socio.nombre} — ${String(params.mes).padStart(2,'0')}/${params.anio}.`);
+});
+
+// HU14 — Emitir factura (consolida y guarda el documento final)
+document.getElementById("btn-emitir").addEventListener("click", () => {
+  const params = leerParametrosFactura();
+  if (!params) return;
+
+  // Evitar duplicados: ya existe una factura emitida para ese socio y periodo
+  const yaEmitida = facturas.find(f => f.socioId === params.socioId && f.mes === params.mes && f.anio === params.anio);
+  if (yaEmitida){
+    showMsg("fact-msg", `Ya existe una factura emitida para este periodo (N.º ${yaEmitida.id}).`, false);
+    return;
+  }
+
+  const calc = calcularFactura(params.socioId, params.mes, params.anio);
+  const nueva = {
+    id: nextFacturaId++,
+    socioId: params.socioId,
+    socioNombre: calc.socio.nombre,
+    mes: params.mes,
+    anio: params.anio,
+    lineas: calc.lineas,
+    subtotalUso: calc.subtotalUso,
+    subtotalNoOcupacion: calc.subtotalNoOcupacion,
+    subtotalPenalizaciones: calc.subtotalPenalizaciones,
+    total: calc.total,
+    fechaEmision: new Date().toISOString()
+  };
+
+  facturas.push(nueva);
+  guardarDatos();
+
+  mostrarPreviewFactura(calc);
+  renderDocumentoFactura(nueva);
+  document.getElementById("fact-historial-card").style.display = "none"; // Ocultar historial si estaba abierto
+  showMsg("fact-msg", `Factura N.º ${nueva.id} emitida correctamente.`);
+  showToast(`Factura N.º ${nueva.id} emitida para ${nueva.socioNombre}`);
+});
+
+// NUEVO: Mostrar el historial resumido de las facturas del usuario seleccionado
+document.getElementById("btn-historial").addEventListener("click", () => {
+  const socioId = parseInt(document.getElementById("fact-socio").value);
+  if (!socioId) {
+    showMsg("fact-msg", "Selecciona un socio para ver su historial.", false);
+    return;
+  }
+
+  const historialCard = document.getElementById("fact-historial-card");
+  const tbody = document.getElementById("fact-historial-tbody");
+  
+  // Ocultar las tarjetas de cálculo y documento al ver el historial
+  document.getElementById("fact-preview-card").style.display = "none";
+  document.getElementById("fact-documento").style.display = "none";
+
+  // Buscar todas las facturas pertenecientes a ese socio
+  const facturasSocio = facturas.filter(f => f.socioId === socioId);
+
+  if (facturasSocio.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty">No hay facturas emitidas para este socio.</div></td></tr>`;
+  } else {
+    // Ordenar del periodo más reciente al más antiguo
+    facturasSocio.sort((a, b) => b.anio !== a.anio ? b.anio - a.anio : b.mes - a.mes);
+
+    // Renderizar solo los montos base, sin el cálculo detallado
+    tbody.innerHTML = facturasSocio.map(f => `
+      <tr>
+        <td><strong>${String(f.mes).padStart(2, '0')}/${f.anio}</strong></td>
+        <td class="mono">Bs. ${f.subtotalUso.toFixed(2)}</td>
+        <td class="mono">Bs. ${f.subtotalNoOcupacion.toFixed(2)}</td>
+        <td class="mono">Bs. ${f.subtotalPenalizaciones.toFixed(2)}</td>
+        <td class="mono" style="color:var(--primary); font-weight:bold;">Bs. ${f.total.toFixed(2)}</td>
+      </tr>
+    `).join("");
+  }
+  
+  historialCard.style.display = "block";
+});
+
+// ============================================================
+// INICIALIZACIÓN
+// ============================================================
+cargarDatos();
+if (reservas.length) nextReservaId = Math.max(...reservas.map(r => r.id)) + 1;
+renderPistas();
+renderPrecio();
+renderSocios();
+aplicarFiltroReservas();
+</script>
+
+</body>
+</html>
