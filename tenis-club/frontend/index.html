@@ -657,6 +657,7 @@
   </section>
 
   <!--=====================VISTA:FACTURACIÓN =====================-->
+<!--===================== VISTA: FACTURACIÓN =====================-->
 <section id="view-facturacion" class="view">
   <div class="view-head">
     <div>
@@ -685,8 +686,10 @@
         </div>
       </div>
       <div class="btn-row" style="margin-top:10px;">
-        <button type="button" class="btn btn-primary" id="btn-calcular">Calcular Importe (HU12)</button>
-        <button type="button" class="btn btn-success" id="btn-emitir">Emitir Factura (HU14)</button>
+        <button type="button" class="btn btn-primary" id="btn-calcular">Calcular Importe </button>
+        <button type="button" class="btn btn-success" id="btn-emitir">Emitir Factura </button>
+        <!-- Botón de Historial Agregado -->
+        <button type="button" class="btn btn-ghost" id="btn-historial">Historial Factura </button>
       </div>
       <div class="form-msg" id="fact-msg"></div>
     </div>
@@ -694,6 +697,25 @@
     <div class="card" id="fact-preview-card" style="display:none;">
       <h2>Vista Previa del Cálculo</h2>
       <div id="fact-preview-content"></div>
+    </div>
+  </div>
+
+  <!-- Nueva Tarjeta de Historial -->
+  <div class="card" id="fact-historial-card" style="display:none; margin-top:24px;">
+    <h2>Historial de Facturas del Socio</h2>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Periodo</th>
+            <th>Uso Pistas</th>
+            <th>No Ocupación</th>
+            <th>Penalización</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody id="fact-historial-tbody"></tbody>
+      </table>
     </div>
   </div>
 
@@ -1450,6 +1472,16 @@ function estaFinalizadaReserva(r){
 //  carga a la factura del socio; el resto se cargan como si se hubiera usado."
 // Para saberlo, hace falta mirar TODAS las no-ocupaciones del socio en el
 // año (no solo el mes que se está facturando) y quedarnos con la más antigua.
+// HU13 — penalizaciones por cancelación + no-shows automáticos
+function calcularPenalizacionesDelPeriodo(reservasDelPeriodo){
+  const canceladas = reservasDelPeriodo.filter(r => r.estado === 'Cancelada');
+  const subtotalCanceladas = canceladas.reduce((s, r) => s + (r.penalizacion ?? tarifaCastigo), 0);
+  const noShows = reservasDelPeriodo.filter(r =>
+    r.estado === 'Activa' && r.asistencia !== 'asistio' && estaFinalizadaReserva(r)
+  );
+  return { canceladas, subtotalCanceladas, noShows };
+}
+
 function calcularFactura(socioId, mes, anio){
   const socio = socios.find(s => s.id === socioId);
   const reservasSocio = reservas.filter(r => r.socioId === socioId);
@@ -1494,7 +1526,7 @@ function calcularFactura(socioId, mes, anio){
   const lineasPenalizacion = canceladas.map(r => ({
     tipo: "penalizacion",
     concepto: `Penalización por cancelación — ${r.pistaNombre} — ${formatFechaListado(r.fecha)} ${String(r.horaInicio).padStart(2,'0')}:00`,
-    monto: r.penalizacion ?? Math.max(precioActual, tarifaCastigo)
+    monto: r.penalizacion ?? tarifaCastigo
   }));
   const subtotalPenalizaciones = lineasPenalizacion.reduce((s, l) => s + l.monto, 0);
 
@@ -1571,12 +1603,14 @@ function leerParametrosFactura(){
 }
 
 // HU12 — Calcular importe (solo vista previa, no emite nada)
+// HU12 — Calcular importe (solo vista previa, no emite nada)
 document.getElementById("btn-calcular").addEventListener("click", () => {
   const params = leerParametrosFactura();
   if (!params) return;
 
   const calc = calcularFactura(params.socioId, params.mes, params.anio);
   mostrarPreviewFactura(calc);
+  document.getElementById("fact-historial-card").style.display = "none"; // Ocultar historial si estaba abierto
   showMsg("fact-msg", `Importe calculado para ${calc.socio.nombre} — ${String(params.mes).padStart(2,'0')}/${params.anio}.`);
 });
 
@@ -1613,8 +1647,48 @@ document.getElementById("btn-emitir").addEventListener("click", () => {
 
   mostrarPreviewFactura(calc);
   renderDocumentoFactura(nueva);
+  document.getElementById("fact-historial-card").style.display = "none"; // Ocultar historial si estaba abierto
   showMsg("fact-msg", `Factura N.º ${nueva.id} emitida correctamente.`);
   showToast(`Factura N.º ${nueva.id} emitida para ${nueva.socioNombre}`);
+});
+
+// NUEVO: Mostrar el historial resumido de las facturas del usuario seleccionado
+document.getElementById("btn-historial").addEventListener("click", () => {
+  const socioId = parseInt(document.getElementById("fact-socio").value);
+  if (!socioId) {
+    showMsg("fact-msg", "Selecciona un socio para ver su historial.", false);
+    return;
+  }
+
+  const historialCard = document.getElementById("fact-historial-card");
+  const tbody = document.getElementById("fact-historial-tbody");
+  
+  // Ocultar las tarjetas de cálculo y documento al ver el historial
+  document.getElementById("fact-preview-card").style.display = "none";
+  document.getElementById("fact-documento").style.display = "none";
+
+  // Buscar todas las facturas pertenecientes a ese socio
+  const facturasSocio = facturas.filter(f => f.socioId === socioId);
+
+  if (facturasSocio.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty">No hay facturas emitidas para este socio.</div></td></tr>`;
+  } else {
+    // Ordenar del periodo más reciente al más antiguo
+    facturasSocio.sort((a, b) => b.anio !== a.anio ? b.anio - a.anio : b.mes - a.mes);
+
+    // Renderizar solo los montos base, sin el cálculo detallado
+    tbody.innerHTML = facturasSocio.map(f => `
+      <tr>
+        <td><strong>${String(f.mes).padStart(2, '0')}/${f.anio}</strong></td>
+        <td class="mono">Bs. ${f.subtotalUso.toFixed(2)}</td>
+        <td class="mono">Bs. ${f.subtotalNoOcupacion.toFixed(2)}</td>
+        <td class="mono">Bs. ${f.subtotalPenalizaciones.toFixed(2)}</td>
+        <td class="mono" style="color:var(--primary); font-weight:bold;">Bs. ${f.total.toFixed(2)}</td>
+      </tr>
+    `).join("");
+  }
+  
+  historialCard.style.display = "block";
 });
 
 // ============================================================
