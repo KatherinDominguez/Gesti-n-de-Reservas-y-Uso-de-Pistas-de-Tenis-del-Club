@@ -1,0 +1,7 @@
+[
+  { "id": 1, "nombre": "Pista 1", "superficie": "Tierra batida" },
+  { "id": 2, "nombre": "Pista 2", "superficie": "Tierra batida" },
+  { "id": 3, "nombre": "Pista 3", "superficie": "Dura" },
+  { "id": 4, "nombre": "Pista 4", "superficie": "Dura" },
+  { "id": 5, "nombre": "Pista 5", "superficie": "Césped" }
+]

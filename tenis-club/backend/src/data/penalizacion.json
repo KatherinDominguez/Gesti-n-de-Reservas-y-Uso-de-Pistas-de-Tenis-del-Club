@@ -1,0 +1,15 @@
+{
+  "actual": 15,
+  "historial": [
+    {
+      "fecha": "2026-07-23T19:34:45.948Z",
+      "anterior": 15,
+      "nuevo": 1
+    },
+    {
+      "fecha": "2026-07-23T19:42:27.560Z",
+      "anterior": 1,
+      "nuevo": 15
+    }
+  ]
+}
