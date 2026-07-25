@@ -509,10 +509,18 @@
       <div class="stat"><div class="num" id="stat-reservas-activas">0</div><div class="lbl">Activas</div></div>
       <div class="stat"><div class="num" id="stat-reservas-canceladas">0</div><div class="lbl">Canceladas</div></div>
     </div>
+
+<div class="card" style="margin-bottom:16px;">
+  <div class="field" style="margin-bottom:0;">
+    <label for="reserva-buscar">Buscar reservas por socio</label>
+    <input type="text" id="reserva-buscar" placeholder="Nombre o número de socio…">
+  </div>
+</div>
+
     <div class="card">
       <h2>Todas las reservas</h2>
       <table>
-        <thead><tr><th>Socio</th><th>Pista</th><th>Fecha</th><th>Hora</th><th>Estado</th><th></th></tr></thead>
+        <thead><tr><th>Socio</th><th>Pista</th><th>Fecha</th><th>Hora</th><th>Estado</th><th>Uso</th><th></th></tr></thead>
         <tbody id="reservas-tbody"></tbody>
       </table>
     </div>
@@ -653,13 +661,25 @@ function resetHorasDisponibles(){
 }
 
 // SO01 — Consulta disponibilidad real de la pista para la fecha elegida
+let _dispReqId = 0; // contador global de peticiones de disponibilidad
+
 async function actualizarHorasDisponibles(){
   const pistaId = document.getElementById("reserva-form").dataset.pistaId;
   const fecha = document.getElementById("reserva-fecha").value;
   resetHorasDisponibles();
   if (!pistaId || !fecha) return;
+
+  const miReqId = ++_dispReqId; // marca esta petición como "la última"
+
   try{
     const data = await api(`/pistas/${pistaId}/disponibilidad?fecha=${fecha}`);
+
+    // Si mientras esperábamos se disparó una petición más nueva, ignoramos esta respuesta
+    if (miReqId !== _dispReqId) return;
+
+    // Si el usuario cambió de fecha mientras esperábamos, tampoco aplica
+    if (document.getElementById("reserva-fecha").value !== fecha) return;
+
     const ocupadas = data.ocupadas || [];
     const select = document.getElementById("reserva-hora");
     Array.from(select.options).forEach(opt => {
@@ -869,16 +889,55 @@ function esMismoDiaReserva(fechaStr){
   return fechaStr === hoyStr;
 }
 
+function estaFinalizada(fechaStr, hora){
+  const fh = new Date(`${fechaStr}T${hora}:00`);
+  return fh < new Date();
+}
+
+function badgeUso(r){
+  if (r.estado !== "activa") return `<span class="badge inactiva">—</span>`;
+  if (r.uso === "usada") return `<span class="badge activa">Ocupada</span>`;
+  if (r.uso === "no_ocupada") return `<span class="badge inactiva">No ocupada</span>`;
+  if (!estaFinalizada(r.fecha, r.hora)) return `<span class="badge" style="background:var(--line);color:var(--ink-soft);">Pendiente</span>`;
+  return `<span class="badge" style="background:#FDF3D6;color:#8A6D1D;">Sin registrar</span>`;
+}
+
 async function loadReservas(){
   const reservas = await api("/reservas");
+  window._reservasCache = reservas;
+
+  const activas = reservas.filter(r => r.estado === "activa").length;
+  document.getElementById("stat-reservas-activas").textContent = activas;
+  document.getElementById("stat-reservas-canceladas").textContent = reservas.length - activas;
+
+  aplicarFiltroReservas();
+}
+
+function aplicarFiltroReservas(){
+  const q = document.getElementById("reserva-buscar").value.trim().toLowerCase();
+  const socios = window._sociosCache || [];
+  let lista = window._reservasCache || [];
+
+  if (q){
+    lista = lista.filter(r => {
+      const socio = socios.find(s => s.id === r.socioId);
+      if (!socio) return false;
+      return socio.nombre.toLowerCase().includes(q) || socio.numeroSocio.toLowerCase().includes(q);
+    });
+  }
+  renderReservas(lista);
+}
+
+function renderReservas(reservas){
   const socios = window._sociosCache || [];
   const pistas = window._pistasCache || [];
-
   const tbody = document.getElementById("reservas-tbody");
+
   tbody.innerHTML = reservas.length ? [...reservas].reverse().map(r => {
     const socio = socios.find(s => s.id === r.socioId);
     const pista = pistas.find(p => p.id === r.pistaId);
     const puedeCancelar = r.estado === "activa" && !esMismoDiaReserva(r.fecha);
+    const puedeRegistrarUso = r.estado === "activa" && r.uso === null;
     return `
       <tr>
         <td>${socio ? `${socio.numeroSocio} — ${socio.nombre}` : "Socio eliminado"}</td>
@@ -886,20 +945,32 @@ async function loadReservas(){
         <td class="mono">${formatFecha(r.fecha)}</td>
         <td class="mono">${r.hora}</td>
         <td><span class="badge ${r.estado === "activa" ? "activa" : "inactiva"}">${r.estado === "activa" ? "Activa" : "Cancelada"}</span></td>
+        <td>${badgeUso(r)}</td>
         <td>
-          ${puedeCancelar ? `<button class="btn btn-clay btn-sm" onclick="cancelarReserva(${r.id})">Cancelar</button>` : ""}
+          <div class="btn-row">
+            ${puedeCancelar ? `<button class="btn btn-clay btn-sm" onclick="cancelarReserva(${r.id})">Cancelar</button>` : ""}
+            ${puedeRegistrarUso ? `
+              <button class="btn btn-primary btn-sm" onclick="registrarUso(${r.id}, 'usada')">Ocupada</button>
+              <button class="btn btn-ghost btn-sm" onclick="registrarUso(${r.id}, 'no_ocupada')">No ocupada</button>
+            ` : ""}
+          </div>
         </td>
       </tr>
     `;
-  }).join("") : `<tr><td colspan="6"><div class="empty">Aún no hay reservas registradas.</div></td></tr>`;
-
-  const activas = reservas.filter(r => r.estado === "activa").length;
-  document.getElementById("stat-reservas-activas").textContent = activas;
-  document.getElementById("stat-reservas-canceladas").textContent = reservas.length - activas;
-
-  window._reservasCache = reservas;
+  }).join("") : `<tr><td colspan="7"><div class="empty">No se encontraron reservas.</div></td></tr>`;
 }
 
+document.getElementById("reserva-buscar").addEventListener("input", aplicarFiltroReservas);
+
+async function registrarUso(id, uso){
+  try{
+    await api(`/reservas/${id}/uso`, { method: "PATCH", body: JSON.stringify({ uso }) });
+    showToast(uso === "usada" ? "Pista marcada como ocupada" : "Pista marcada como no ocupada");
+    loadReservas();
+  }catch(err){
+    showToast(err.message, true);
+  }
+}
 async function cancelarReserva(id){
   try{
     await api(`/reservas/${id}/cancelar`, { method: "PATCH" });

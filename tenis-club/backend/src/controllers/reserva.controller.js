@@ -23,6 +23,15 @@ exports.cancelar = async (req, res) => {
   }
 };
 
+exports.registrarUso = async (req, res) => {
+  try {
+    const reserva = await Reserva.registrarUso(Number(req.params.id), req.body.uso);
+    res.json(reserva);
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+};
+
 exports.porSocio = async (req, res) => {
   const reservas = await Reserva.getBySocio(Number(req.params.socioId));
   res.json(reservas);
