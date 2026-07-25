@@ -1396,6 +1396,16 @@ function estaFinalizadaReserva(r){
 //  carga a la factura del socio; el resto se cargan como si se hubiera usado."
 // Para saberlo, hace falta mirar TODAS las no-ocupaciones del socio en el
 // año (no solo el mes que se está facturando) y quedarnos con la más antigua.
+// HU13 — penalizaciones por cancelación + no-shows automáticos
+function calcularPenalizacionesDelPeriodo(reservasDelPeriodo){
+  const canceladas = reservasDelPeriodo.filter(r => r.estado === 'Cancelada');
+  const subtotalCanceladas = canceladas.reduce((s, r) => s + (r.penalizacion ?? tarifaCastigo), 0);
+  const noShows = reservasDelPeriodo.filter(r =>
+    r.estado === 'Activa' && r.asistencia !== 'asistio' && estaFinalizadaReserva(r)
+  );
+  return { canceladas, subtotalCanceladas, noShows };
+}
+  
 function calcularFactura(socioId, mes, anio){
   const socio = socios.find(s => s.id === socioId);
   const reservasSocio = reservas.filter(r => r.socioId === socioId);
