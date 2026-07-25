@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+\<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -366,6 +366,14 @@
     font-weight: 500;
     line-height: 1.35;
   }
+
+  @media print {
+  body * { visibility: hidden; }
+  #fact-print-area, #fact-print-area * { visibility: visible; }
+  #fact-print-area { position: absolute; left: 0; top: 0; width: 100%; }
+  nav, header .brand-row, .view-head, .btn-row, #fact-preview-card { display: none !important; }
+}
+
 </style>
 </head>
 <body>
@@ -383,6 +391,8 @@
     <button class="tab-btn" data-view="precio">Precio por Hora</button>
     <button class="tab-btn" data-view="socios">Socios</button>
     <button class="tab-btn" data-view="reservas">Reservas</button>
+    <button class="tab-btn" data-view="facturacion">Facturación</button>
+    <button class="tab-btn" data-view="historial">Historial del Socio</button>
   </nav>
 </header>
 
@@ -646,6 +656,130 @@
     </div>
   </section>
 
+  <!--=====================VISTA:FACTURACIÓN =====================-->
+<!--===================== VISTA: FACTURACIÓN =====================-->
+<section id="view-facturacion" class="view">
+  <div class="view-head">
+    <div>
+      <h1>Emisión de Facturas</h1>
+      <p>Consolida el uso de pistas y penalizaciones del mes para generar el documento final.</p>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Parámetros de Facturación</h2>
+      <div class="field">
+        <label for="fact-socio">Socio</label>
+        <select id="fact-socio">
+          <option value="">Seleccione un socio activo...</option>
+        </select>
+      </div>
+      <div class="field" style="display:flex;gap:12px;">
+        <div style="flex:1;">
+          <label for="fact-mes">Mes</label>
+          <input type="number" id="fact-mes" min="1" max="12" value="7">
+        </div>
+        <div style="flex:1;">
+          <label for="fact-anio">Año</label>
+          <input type="number" id="fact-anio" min="2024" max="2030" value="2026">
+        </div>
+      </div>
+      <div class="btn-row" style="margin-top:10px;">
+        <button type="button" class="btn btn-primary" id="btn-calcular">Calcular Importe </button>
+        <button type="button" class="btn btn-success" id="btn-emitir">Emitir Factura </button>
+        <!-- Botón de Historial Agregado -->
+        <button type="button" class="btn btn-ghost" id="btn-historial">Historial Factura </button>
+      </div>
+      <div class="form-msg" id="fact-msg"></div>
+    </div>
+
+    <div class="card" id="fact-preview-card" style="display:none;">
+      <h2>Vista Previa del Cálculo</h2>
+      <div id="fact-preview-content"></div>
+    </div>
+  </div>
+
+  <!-- Nueva Tarjeta de Historial -->
+  <div class="card" id="fact-historial-card" style="display:none; margin-top:24px;">
+    <h2>Historial de Facturas del Socio</h2>
+    <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Periodo</th>
+            <th>Uso Pistas</th>
+            <th>No Ocupación</th>
+            <th>Penalización</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody id="fact-historial-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Documento Imprimible -->
+  <div class="card" id="fact-documento" style="display:none;margin-top:24px;">
+    <div id="fact-print-area" style="padding:20px;"></div>
+    <div class="btn-row" style="justify-content:center;margin-top:16px;">
+      <button class="btn btn-primary" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+    </div>
+  </div>
+</section>
+
+  <!-- ===================== VISTA: HISTORIAL DEL SOCIO (HU15) ===================== -->
+  <section id="view-historial" class="view">
+    <div class="view-head">
+      <div>
+        <h1>Historial del Socio</h1>
+        <p>Centro de consulta general: reservas pasadas, asistencia y facturas de un socio.</p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px;">
+      <label for="hist-socio">Seleccionar socio</label>
+      <select id="hist-socio">
+        <option value="">Seleccione un socio...</option>
+      </select>
+    </div>
+
+    <div id="hist-empty" class="card empty">Selecciona un socio para ver su historial.</div>
+
+    <div id="hist-content" style="display:none;">
+      <div class="count-row">
+        <div class="stat"><div class="num" id="hist-total-reservas">0</div><div class="lbl">Reservas totales</div></div>
+        <div class="stat"><div class="num" id="hist-ocupadas">0</div><div class="lbl">Pistas ocupadas</div></div>
+        <div class="stat"><div class="num" id="hist-canceladas">0</div><div class="lbl">Canceladas</div></div>
+        <div class="stat"><div class="num" id="hist-deuda">Bs. 0.00</div><div class="lbl">Deuda pendiente</div></div>
+      </div>
+
+      <div class="card" style="margin-bottom:20px;">
+        <h2>Historial de Reservas</h2>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr><th>Fecha</th><th>Pista</th><th>Hora</th><th>Estado</th><th>Asistencia</th></tr>
+            </thead>
+            <tbody id="hist-reservas-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Historial de Facturas</h2>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr><th>Periodo</th><th>Total</th><th>Emitida</th><th>Estado</th><th></th></tr>
+            </thead>
+            <tbody id="hist-facturas-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
 </main>
 
 <div class="toast" id="toast"></div>
@@ -659,6 +793,7 @@ function guardarDatos() {
   localStorage.setItem('club_precio', JSON.stringify(precioActual));
   localStorage.setItem('club_historialPrecio', JSON.stringify(historialPrecio));
   localStorage.setItem('club_tarifaCastigo', JSON.stringify(tarifaCastigo));
+  localStorage.setItem('club_facturas', JSON.stringify(facturas));
 }
 // 2. Cargar los datos guardados al abrir la página
 function cargarDatos() {
@@ -668,6 +803,7 @@ function cargarDatos() {
   if (localStorage.getItem('club_precio')) precioActual = JSON.parse(localStorage.getItem('club_precio'));
   if (localStorage.getItem('club_historialPrecio')) historialPrecio = JSON.parse(localStorage.getItem('club_historialPrecio'));
   if (localStorage.getItem('club_tarifaCastigo')) tarifaCastigo = JSON.parse(localStorage.getItem('club_tarifaCastigo'));
+  if (localStorage.getItem('club_facturas')) facturas = JSON.parse(localStorage.getItem('club_facturas'));
 }
 // ============================================================
 // ESTADO EN MEMORIA
@@ -697,6 +833,9 @@ let editingSocioId = null;
 
 let reservas = [];
 let nextReservaId = 1;
+
+let facturas = [];    // AD10/AD14 — facturas ya emitidas
+let nextFacturaId = 1;
 
 let selectedSlot = null; // Para nueva reserva: { fecha, pistaId, pistaNombre, hora }
 let selectedReservaToConfirm = null; // Para confirmar ocupación: objeto Reserva
@@ -915,6 +1054,8 @@ function renderSocios(){
     });
   }
   updateSocioSelect();
+  renderFactSocioSelect();
+  renderHistSocioSelect();
 }
 
 document.getElementById("socio-form").addEventListener("submit", (e) => {
@@ -987,7 +1128,7 @@ function renderMatrix() {
   headerRow.innerHTML = `<th style="width: 80px;">Hora</th>`;
   
   if (pistasActivas.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="100%"><div class="empty">No hay pistas activas registradas.</div></td> destruction: true</tr>`;
+    tbody.innerHTML = `<tr><td colspan="100%"><div class="empty">No hay pistas activas registradas.</div></td></tr>`;
     return;
   }
 
@@ -1304,6 +1445,345 @@ function cancelarReserva(id){
   renderMatrix();        // libera automáticamente la pista en el calendario
   aplicarFiltroReservas(); // actualiza la tabla sin recargar la página
 }
+
+
+// ============================================================
+// FACTURACIÓN (AD08–AD11 / HU12–HU14)
+// ============================================================
+function renderFactSocioSelect(){
+  const sel = document.getElementById("fact-socio");
+  if (!sel) return;
+  const seleccionActual = sel.value;
+  sel.innerHTML = `<option value="">Seleccione un socio activo...</option>` +
+    socios.filter(s => s.estado === 'Activo')
+          .map(s => `<option value="${s.id}">${s.nombre} (CI: ${s.ci})</option>`)
+          .join("");
+  if (seleccionActual) sel.value = seleccionActual;
+}
+
+// Una reserva "terminó" cuando ya pasó la hora de fin de su bloque
+function estaFinalizadaReserva(r){
+  const fin = new Date(`${r.fecha}T${String(r.horaFin).padStart(2,'0')}:00:00`);
+  return fin < new Date();
+}
+
+// AD08/AD09 + regla especial del enunciado:
+// "La primera 'no ocupación' de una pista durante un año natural no se
+//  carga a la factura del socio; el resto se cargan como si se hubiera usado."
+// Para saberlo, hace falta mirar TODAS las no-ocupaciones del socio en el
+// año (no solo el mes que se está facturando) y quedarnos con la más antigua.
+// HU13 — penalizaciones por cancelación + no-shows automáticos
+function calcularPenalizacionesDelPeriodo(reservasDelPeriodo){
+  const canceladas = reservasDelPeriodo.filter(r => r.estado === 'Cancelada');
+  const subtotalCanceladas = canceladas.reduce((s, r) => s + (r.penalizacion ?? tarifaCastigo), 0);
+  const noShows = reservasDelPeriodo.filter(r =>
+    r.estado === 'Activa' && r.asistencia !== 'asistio' && estaFinalizadaReserva(r)
+  );
+  return { canceladas, subtotalCanceladas, noShows };
+}
+
+function calcularFactura(socioId, mes, anio){
+  const socio = socios.find(s => s.id === socioId);
+  const reservasSocio = reservas.filter(r => r.socioId === socioId);
+
+  const delPeriodo = reservasSocio.filter(r => {
+    const [y, m] = r.fecha.split("-").map(Number);
+    return y === anio && m === mes;
+  });
+
+  // --- AD08: uso efectivo confirmado ---
+  const usadas = delPeriodo.filter(r => r.estado === 'Activa' && r.asistencia === 'asistio');
+  const lineasUso = usadas.map(r => ({
+    tipo: "uso",
+    concepto: `Uso de pista — ${r.pistaNombre} — ${formatFechaListado(r.fecha)} ${String(r.horaInicio).padStart(2,'0')}:00`,
+    monto: precioActual
+  }));
+  const subtotalUso = lineasUso.reduce((s, l) => s + l.monto, 0);
+
+  // --- No ocupación: primera del año natural exenta, el resto se cobra como uso ---
+  const noShowsDelAnio = reservasSocio
+    .filter(r => r.estado === 'Activa' && r.asistencia !== 'asistio' && estaFinalizadaReserva(r))
+    .filter(r => Number(r.fecha.split("-")[0]) === anio)
+    .sort((a, b) => (a.fecha + String(a.horaInicio).padStart(2,'0')).localeCompare(b.fecha + String(b.horaInicio).padStart(2,'0')));
+
+  const primeraNoShowIdDelAnio = noShowsDelAnio.length ? noShowsDelAnio[0].id : null;
+
+  const noShowsDelPeriodo = delPeriodo.filter(r => r.estado === 'Activa' && r.asistencia !== 'asistio' && estaFinalizadaReserva(r));
+  const lineasNoOcupacion = noShowsDelPeriodo.map(r => {
+    const esLaExenta = r.id === primeraNoShowIdDelAnio;
+    return {
+      tipo: "no_ocupacion",
+      concepto: esLaExenta
+        ? `No ocupación (1ª del año, exenta) — ${r.pistaNombre} — ${formatFechaListado(r.fecha)} ${String(r.horaInicio).padStart(2,'0')}:00`
+        : `No ocupación (se factura como uso) — ${r.pistaNombre} — ${formatFechaListado(r.fecha)} ${String(r.horaInicio).padStart(2,'0')}:00`,
+      monto: esLaExenta ? 0 : precioActual
+    };
+  });
+  const subtotalNoOcupacion = lineasNoOcupacion.reduce((s, l) => s + l.monto, 0);
+
+  // --- AD03/AD09: cancelaciones, con el importe ya congelado al momento de cancelar ---
+  const canceladas = delPeriodo.filter(r => r.estado === 'Cancelada');
+  const lineasPenalizacion = canceladas.map(r => ({
+    tipo: "penalizacion",
+    concepto: `Penalización por cancelación — ${r.pistaNombre} — ${formatFechaListado(r.fecha)} ${String(r.horaInicio).padStart(2,'0')}:00`,
+    monto: r.penalizacion ?? tarifaCastigo
+  }));
+  const subtotalPenalizaciones = lineasPenalizacion.reduce((s, l) => s + l.monto, 0);
+
+  const total = subtotalUso + subtotalNoOcupacion + subtotalPenalizaciones;
+
+  return {
+    socio, mes, anio,
+    lineas: [...lineasUso, ...lineasNoOcupacion, ...lineasPenalizacion],
+    subtotalUso, subtotalNoOcupacion, subtotalPenalizaciones, total
+  };
+}
+
+function mostrarPreviewFactura(calc){
+  const card = document.getElementById("fact-preview-card");
+  const content = document.getElementById("fact-preview-content");
+
+  content.innerHTML = `
+    <table>
+      <thead><tr><th>Concepto</th><th>Monto</th></tr></thead>
+      <tbody>
+        ${calc.lineas.length
+          ? calc.lineas.map(l => `<tr><td>${l.concepto}</td><td class="mono">Bs. ${l.monto.toFixed(2)}</td></tr>`).join("")
+          : `<tr><td colspan="2"><div class="empty">Sin movimientos en este periodo.</div></td></tr>`}
+      </tbody>
+    </table>
+    <div style="margin-top:16px; padding-top:16px; border-top:1px dashed var(--line); font-size:14px;">
+      <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>Subtotal uso de pistas</span><strong class="mono">Bs. ${calc.subtotalUso.toFixed(2)}</strong></div>
+      <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>Subtotal no ocupación</span><strong class="mono">Bs. ${calc.subtotalNoOcupacion.toFixed(2)}</strong></div>
+      <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span>Subtotal penalizaciones por cancelación</span><strong class="mono">Bs. ${calc.subtotalPenalizaciones.toFixed(2)}</strong></div>
+      <div style="display:flex; justify-content:space-between; font-size:18px; margin-top:8px; padding-top:8px; border-top:1px solid var(--line);">
+        <span>Total</span><strong class="mono" style="color:var(--primary);">Bs. ${calc.total.toFixed(2)}</strong>
+      </div>
+    </div>
+  `;
+  card.style.display = "block";
+}
+
+function renderDocumentoFactura(f){
+  const area = document.getElementById("fact-print-area");
+  const doc = document.getElementById("fact-documento");
+  const fechaEmisionStr = new Date(f.fechaEmision).toLocaleDateString('es-BO');
+
+  area.innerHTML = `
+    <div style="text-align:center; margin-bottom:20px;">
+      <div style="font-family:'Anton',sans-serif; font-size:24px; color:var(--primary-dark); text-transform:uppercase;">Club Set — Factura</div>
+      <div style="color:var(--ink-soft); font-size:13px;">Factura N.º ${f.id} · Periodo ${String(f.mes).padStart(2,'0')}/${f.anio} · Emitida el ${fechaEmisionStr}</div>
+    </div>
+    <div style="margin-bottom:16px;"><strong>Socio:</strong> ${f.socioNombre}</div>
+    <table>
+      <thead><tr><th>Concepto</th><th>Monto</th></tr></thead>
+      <tbody>
+        ${f.lineas.length
+          ? f.lineas.map(l => `<tr><td>${l.concepto}</td><td class="mono">Bs. ${l.monto.toFixed(2)}</td></tr>`).join("")
+          : `<tr><td colspan="2">Sin movimientos en este periodo.</td></tr>`}
+      </tbody>
+    </table>
+    <div style="text-align:right; margin-top:16px; font-size:18px;">
+      <strong>Total a pagar: <span class="mono" style="color:var(--primary);">Bs. ${f.total.toFixed(2)}</span></strong>
+    </div>
+  `;
+  doc.style.display = "block";
+}
+
+function leerParametrosFactura(){
+  const socioId = parseInt(document.getElementById("fact-socio").value);
+  const mes = parseInt(document.getElementById("fact-mes").value);
+  const anio = parseInt(document.getElementById("fact-anio").value);
+
+  if (!socioId){ showMsg("fact-msg", "Selecciona un socio.", false); return null; }
+  if (!mes || mes < 1 || mes > 12){ showMsg("fact-msg", "El mes debe estar entre 1 y 12.", false); return null; }
+  if (!anio || anio < 2000){ showMsg("fact-msg", "Ingresa un año válido.", false); return null; }
+
+  return { socioId, mes, anio };
+}
+
+// HU12 — Calcular importe (solo vista previa, no emite nada)
+// HU12 — Calcular importe (solo vista previa, no emite nada)
+document.getElementById("btn-calcular").addEventListener("click", () => {
+  const params = leerParametrosFactura();
+  if (!params) return;
+
+  const calc = calcularFactura(params.socioId, params.mes, params.anio);
+  mostrarPreviewFactura(calc);
+  document.getElementById("fact-historial-card").style.display = "none"; // Ocultar historial si estaba abierto
+  showMsg("fact-msg", `Importe calculado para ${calc.socio.nombre} — ${String(params.mes).padStart(2,'0')}/${params.anio}.`);
+});
+
+// HU14 — Emitir factura (consolida y guarda el documento final)
+document.getElementById("btn-emitir").addEventListener("click", () => {
+  const params = leerParametrosFactura();
+  if (!params) return;
+
+  // Evitar duplicados: ya existe una factura emitida para ese socio y periodo
+  const yaEmitida = facturas.find(f => f.socioId === params.socioId && f.mes === params.mes && f.anio === params.anio);
+  if (yaEmitida){
+    showMsg("fact-msg", `Ya existe una factura emitida para este periodo (N.º ${yaEmitida.id}).`, false);
+    return;
+  }
+
+  const calc = calcularFactura(params.socioId, params.mes, params.anio);
+  const nueva = {
+    id: nextFacturaId++,
+    socioId: params.socioId,
+    socioNombre: calc.socio.nombre,
+    mes: params.mes,
+    anio: params.anio,
+    lineas: calc.lineas,
+    subtotalUso: calc.subtotalUso,
+    subtotalNoOcupacion: calc.subtotalNoOcupacion,
+    subtotalPenalizaciones: calc.subtotalPenalizaciones,
+    total: calc.total,
+    estado: 'Pendiente', // HU15 — permite distinguir facturas pagadas/pendientes en el Historial del Socio
+    fechaEmision: new Date().toISOString()
+  };
+
+  facturas.push(nueva);
+  guardarDatos();
+
+  mostrarPreviewFactura(calc);
+  renderDocumentoFactura(nueva);
+  document.getElementById("fact-historial-card").style.display = "none"; // Ocultar historial si estaba abierto
+  showMsg("fact-msg", `Factura N.º ${nueva.id} emitida correctamente.`);
+  showToast(`Factura N.º ${nueva.id} emitida para ${nueva.socioNombre}`);
+});
+
+// NUEVO: Mostrar el historial resumido de las facturas del usuario seleccionado
+document.getElementById("btn-historial").addEventListener("click", () => {
+  const socioId = parseInt(document.getElementById("fact-socio").value);
+  if (!socioId) {
+    showMsg("fact-msg", "Selecciona un socio para ver su historial.", false);
+    return;
+  }
+
+  const historialCard = document.getElementById("fact-historial-card");
+  const tbody = document.getElementById("fact-historial-tbody");
+  
+  // Ocultar las tarjetas de cálculo y documento al ver el historial
+  document.getElementById("fact-preview-card").style.display = "none";
+  document.getElementById("fact-documento").style.display = "none";
+
+  // Buscar todas las facturas pertenecientes a ese socio
+  const facturasSocio = facturas.filter(f => f.socioId === socioId);
+
+  if (facturasSocio.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty">No hay facturas emitidas para este socio.</div></td></tr>`;
+  } else {
+    // Ordenar del periodo más reciente al más antiguo
+    facturasSocio.sort((a, b) => b.anio !== a.anio ? b.anio - a.anio : b.mes - a.mes);
+
+    // Renderizar solo los montos base, sin el cálculo detallado
+    tbody.innerHTML = facturasSocio.map(f => `
+      <tr>
+        <td><strong>${String(f.mes).padStart(2, '0')}/${f.anio}</strong></td>
+        <td class="mono">Bs. ${f.subtotalUso.toFixed(2)}</td>
+        <td class="mono">Bs. ${f.subtotalNoOcupacion.toFixed(2)}</td>
+        <td class="mono">Bs. ${f.subtotalPenalizaciones.toFixed(2)}</td>
+        <td class="mono" style="color:var(--primary); font-weight:bold;">Bs. ${f.total.toFixed(2)}</td>
+      </tr>
+    `).join("");
+  }
+  
+  historialCard.style.display = "block";
+});
+
+// ============================================================
+// HISTORIAL DEL SOCIO (HU15 — Programador 3)
+// ============================================================
+// NOTA DE INTEGRACIÓN: por ahora esta vista lee directamente los arrays en
+// memoria (reservas/facturas), igual que el resto del frontend, que todavía
+// no consume ningún endpoint. Cuando el backend exponga
+//   GET /socio/:socioId  ->  { reservas: [...], facturas: [...] }
+// basta con sustituir el bloque marcado más abajo por un fetch a esa ruta
+// y usar la respuesta en vez de filtrar los arrays locales.
+
+function renderHistSocioSelect(){
+  const sel = document.getElementById("hist-socio");
+  if (!sel) return;
+  const seleccionActual = sel.value;
+  sel.innerHTML = `<option value="">Seleccione un socio...</option>` +
+    socios.map(s => `<option value="${s.id}">${s.nombre} (CI: ${s.ci})</option>`).join("");
+  if (seleccionActual) sel.value = seleccionActual;
+}
+
+function badgeAsistenciaHist(r){
+  if (r.estado !== 'Activa') return `<span class="badge inactiva">No aplica</span>`;
+  if (r.asistencia === 'asistio') return `<span class="badge activa">Ocupada</span>`;
+  return `<span class="badge inactiva">Pendiente</span>`;
+}
+
+function renderHistorialSocio(){
+  const socioId = parseInt(document.getElementById("hist-socio").value);
+  const empty = document.getElementById("hist-empty");
+  const content = document.getElementById("hist-content");
+
+  if (!socioId){
+    empty.style.display = "block";
+    content.style.display = "none";
+    return;
+  }
+  empty.style.display = "none";
+  content.style.display = "block";
+
+  // ---- INICIO bloque a reemplazar por fetch("/socio/" + socioId) ----
+  const reservasSocio = reservas
+    .filter(r => r.socioId === socioId)
+    .sort((a, b) => (b.fecha + String(b.horaInicio).padStart(2,'0')).localeCompare(a.fecha + String(a.horaInicio).padStart(2,'0')));
+
+  const facturasSocio = facturas
+    .filter(f => f.socioId === socioId)
+    .sort((a, b) => (b.anio * 100 + b.mes) - (a.anio * 100 + a.mes));
+  // ---- FIN bloque a reemplazar por fetch("/socio/" + socioId) ----
+
+  // Estadísticas rápidas
+  document.getElementById("hist-total-reservas").textContent = reservasSocio.length;
+  document.getElementById("hist-ocupadas").textContent = reservasSocio.filter(r => r.asistencia === 'asistio').length;
+  document.getElementById("hist-canceladas").textContent = reservasSocio.filter(r => r.estado === 'Cancelada').length;
+  const deuda = facturasSocio.filter(f => f.estado !== 'Pagada').reduce((s, f) => s + f.total, 0);
+  document.getElementById("hist-deuda").textContent = `Bs. ${deuda.toFixed(2)}`;
+
+  // Tabla: historial de reservas
+  const tbodyR = document.getElementById("hist-reservas-tbody");
+  tbodyR.innerHTML = reservasSocio.length ? reservasSocio.map(r => `
+    <tr>
+      <td class="mono">${formatFechaListado(r.fecha)}</td>
+      <td>${r.pistaNombre}</td>
+      <td class="mono">${String(r.horaInicio).padStart(2,'0')}:00</td>
+      <td><span class="badge ${r.estado === 'Activa' ? 'activa' : 'inactiva'}">${r.estado}</span></td>
+      <td>${badgeAsistenciaHist(r)}</td>
+    </tr>
+  `).join("") : `<tr><td colspan="5"><div class="empty">Este socio no tiene reservas registradas.</div></td></tr>`;
+
+  // Tabla: historial de facturas
+  const tbodyF = document.getElementById("hist-facturas-tbody");
+  tbodyF.innerHTML = facturasSocio.length ? facturasSocio.map(f => `
+    <tr>
+      <td class="mono">${String(f.mes).padStart(2,'0')}/${f.anio}</td>
+      <td class="mono">Bs. ${f.total.toFixed(2)}</td>
+      <td class="mono">${new Date(f.fechaEmision).toLocaleDateString('es-BO')}</td>
+      <td><span class="badge ${f.estado === 'Pagada' ? 'activa' : 'inactiva'}">${f.estado || 'Pendiente'}</span></td>
+      <td>
+        ${f.estado !== 'Pagada' ? `<button class="btn btn-ghost btn-sm" onclick="marcarFacturaPagada(${f.id})">Marcar pagada</button>` : ''}
+      </td>
+    </tr>
+  `).join("") : `<tr><td colspan="5"><div class="empty">Este socio no tiene facturas emitidas.</div></td></tr>`;
+}
+
+function marcarFacturaPagada(facturaId){
+  const f = facturas.find(x => x.id === facturaId);
+  if (!f) return;
+  f.estado = 'Pagada';
+  guardarDatos();
+  showToast(`Factura N.º ${f.id} marcada como pagada`);
+  renderHistorialSocio();
+}
+
+const histSocioSelect = document.getElementById("hist-socio");
+if (histSocioSelect) histSocioSelect.addEventListener("change", renderHistorialSocio);
 
 // ============================================================
 // INICIALIZACIÓN

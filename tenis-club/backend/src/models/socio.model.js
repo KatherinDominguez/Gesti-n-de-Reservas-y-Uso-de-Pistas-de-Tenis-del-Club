@@ -2,6 +2,11 @@ const { readJSON, writeJSON } = require("../utils/fileStore");
 
 const getAll = () => readJSON("socios.json");
 
+async function getById(id) {
+  const socios = await getAll();
+  return socios.find(s => s.id === Number(id)) || null;
+}
+
 async function crear({ numeroSocio, nombre, telefono, email }) {
   const socios = await getAll();
   const existe = socios.some(s => s.numeroSocio === numeroSocio);
@@ -49,4 +54,4 @@ async function modificar(id, cambios) {
   return socio;
 }
 
-module.exports = { getAll, crear, darDeBaja, reactivar, modificar };
+module.exports = { getAll, getById, crear, darDeBaja, reactivar, modificar };

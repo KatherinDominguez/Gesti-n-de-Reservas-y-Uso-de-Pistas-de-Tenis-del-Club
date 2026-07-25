@@ -10,5 +10,6 @@ app.use("/api/precio", require("./routes/precio.routes"));
 app.use("/api/penalizacion", require("./routes/penalizacion.routes"));
 app.use("/api/socios", require("./routes/socio.routes"));
 app.use("/api/reservas", require("./routes/reserva.routes"));
+app.use("/api/facturas", require("./routes/factura.routes"));
 
 module.exports = app;

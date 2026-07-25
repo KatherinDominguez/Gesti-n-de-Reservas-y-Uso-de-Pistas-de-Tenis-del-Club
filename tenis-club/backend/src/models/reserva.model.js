@@ -1,6 +1,7 @@
 const { readJSON, writeJSON } = require("../utils/fileStore");
 const Socio = require("./socio.model");
 const Pista = require("./pista.model");
+const Config = require("./config.model");
 
 const FILE = "reservas.json";
 
@@ -187,22 +188,22 @@ async function crear({ socioId, pistaId, fecha, hora }) {
 async function cancelar(id) {
   const reservas = await getAll();
   const reserva = reservas.find(r => r.id === id);
-
   if (!reserva) throw new Error("Reserva no encontrada.");
-  if (reserva.estado === "cancelada") {
-    throw new Error("La reserva ya estaba cancelada.");
-  }
+  if (reserva.estado === "cancelada") throw new Error("La reserva ya estaba cancelada.");
 
   const fechaReserva = combinarFechaHora(reserva.fecha, reserva.hora);
   const ahora = new Date();
-
   if (esMismoDia(fechaReserva, ahora)) {
     throw new Error("No se puede cancelar una reserva para el mismo día.");
   }
 
+  // Calcular y guardar penalización (base para facturación)
+  const config = await Config.getConfig();
+  const importeNormal = config.precioActual * 1; // duración fija 1h
+  reserva.penalizacion = Math.max(importeNormal, config.tarifaCastigo);
+
   reserva.estado = "cancelada";
   reserva.canceladoEn = ahora.toISOString();
-
   await writeJSON(FILE, reservas);
   return reserva;
 }
@@ -213,6 +214,35 @@ const getBySocio = async (socioId) => {
   return reservas.filter(r => r.socioId === Number(socioId));
 };
 
+/*=========================
+  CONSULTAS PARA FACTURACIÓN
+=========================*/
+function obtenerMesAnio(fechaStr) {
+  const [y, m] = fechaStr.split("-").map(Number);
+  return { mes: m, anio: y };
+}
+
+async function getBySocioYPeriodo(socioId, mes, anio) {
+  const reservas = await getAll();
+  return reservas.filter(r => {
+    if (r.socioId !== Number(socioId)) return false;
+    const { mes: m, anio: a } = obtenerMesAnio(r.fecha);
+    return m === Number(mes) && a === Number(anio);
+  });
+}
+
+async function getUsadasPorSocioYPeriodo(socioId, mes, anio) {
+  const todas = await getBySocioYPeriodo(socioId, mes, anio);
+  return todas.filter(r => r.estado === "activa" && r.uso === "usada");
+}
+
+async function getPenalizablesPorSocioYPeriodo(socioId, mes, anio) {
+  const todas = await getBySocioYPeriodo(socioId, mes, anio);
+  return todas.filter(r =>
+    r.estado === "cancelada" || (r.estado === "activa" && r.uso === "no_ocupada")
+  );
+}
+
 module.exports = {
   getAll,
   crear,
@@ -220,4 +250,7 @@ module.exports = {
   getDisponibilidad,
   getBySocio,
   registrarUso,
+  getBySocioYPeriodo,
+  getUsadasPorSocioYPeriodo,
+  getPenalizablesPorSocioYPeriodo
 };
