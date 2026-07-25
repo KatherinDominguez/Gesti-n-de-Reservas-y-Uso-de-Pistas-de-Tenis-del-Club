@@ -628,6 +628,22 @@
 
       </div>
     </div>
+
+    <!-- ===== Listado de Reservas (Noemí — SO03: cancelación) ===== -->
+    <div class="card" style="margin-top:24px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+        <h2 style="margin:0;">Listado de Reservas</h2>
+        <input type="text" id="reserva-buscar" placeholder="Buscar por nombre de socio..." style="width:auto; min-width:220px;">
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr><th>Socio</th><th>Pista</th><th>Fecha</th><th>Hora</th><th>Estado</th><th>Asistencia</th><th>Penalización</th><th></th></tr>
+          </thead>
+          <tbody id="reservas-tbody"></tbody>
+        </table>
+      </div>
+    </div>
   </section>
 
 </main>
@@ -860,7 +876,14 @@ function renderCastigo(){ document.getElementById("castigo-actual").innerHTML = 
 document.getElementById("castigo-form").addEventListener("submit", (e) => {
   e.preventDefault();
   const input = document.getElementById("castigo-nuevo");
-  tarifaCastigo = parseFloat(input.value);
+  const val = parseFloat(input.value);
+  if (isNaN(val) || val < 0){
+    showMsg("castigo-msg", "Ingresa un monto válido (mayor o igual a 0).", false);
+    return;
+  }
+  tarifaCastigo = val;
+  guardarDatos();
+  showMsg("castigo-msg", `Tarifa mínima de penalización actualizada a Bs. ${val.toFixed(2)}.`);
   showToast(`Tarifa castigo actualizada`);
   input.value = "";
   renderCastigo();
@@ -1128,11 +1151,13 @@ document.getElementById("btn-confirmar-asistencia").addEventListener("click", ()
   }
 
   selectedReservaToConfirm.asistencia = 'asistio';
+  guardarDatos();
   showMsg("reserva-msg", `Se confirmó la ocupación de la pista para ${selectedReservaToConfirm.socioNombre}.`);
   showToast(`Ocupación confirmada para ${selectedReservaToConfirm.socioNombre}`);
 
   resetPanel();
   renderMatrix();
+  aplicarFiltroReservas();
 });
 
 document.getElementById("btn-cancelar-panel").addEventListener("click", () => {
@@ -1164,19 +1189,131 @@ document.getElementById("reserva-form").addEventListener("submit", (e) => {
     asistencia: 'pendiente'
   });
 
+  guardarDatos();
   showMsg("reserva-msg", `Reserva guardada para ${socio.nombre}.`);
   showToast("Reserva realizada");
 
   resetPanel();
   renderMatrix();
+  aplicarFiltroReservas();
 });
+
+// ============================================================
+// LISTADO DE RESERVAS + CANCELACIÓN (Noemí — Historia SO03)
+// ============================================================
+function formatFechaListado(fechaStr){
+  // fechaStr viene como "YYYY-MM-DD"; se formatea sin desfases de zona horaria
+  const [y, m, d] = fechaStr.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+function badgeAsistencia(r){
+  if (r.estado !== 'Activa') return `<span class="badge inactiva">—</span>`;
+  if (r.asistencia === 'asistio') return `<span class="badge activa">Ocupada</span>`;
+  return `<span class="badge inactiva">Pendiente</span>`;
+}
+
+// SO03 — Una reserva NO se puede cancelar si es para el mismo día
+function esMismoDiaReserva(fechaStr){
+  return fechaStr === localISOTimeToday;
+}
+
+// AD03 — Importe de la penalización por cancelar: nunca por debajo de la tarifa mínima de castigo
+function calcularPenalizacion(res){
+  const importeNormal = precioActual * res.duracion;
+  return Math.max(importeNormal, tarifaCastigo);
+}
+
+function motivoNoCancelable(r){
+  if (r.asistencia === 'asistio') return "Ya ocupada";
+  if (esMismoDiaReserva(r.fecha)) return "No cancelable (mismo día)";
+  return "";
+}
+
+function renderReservasListado(lista){
+  const tbody = document.getElementById("reservas-tbody");
+  if (!tbody) return;
+
+  tbody.innerHTML = lista.length ? [...lista].reverse().map(r => {
+    const puedeCancelar = r.estado === 'Activa' && r.asistencia !== 'asistio' && !esMismoDiaReserva(r.fecha);
+    const penalizacionTxt = r.estado === 'Cancelada'
+      ? `Bs. ${(r.penalizacion ?? 0).toFixed(2)}`
+      : "—";
+    return `
+      <tr>
+        <td>${r.socioNombre}</td>
+        <td>${r.pistaNombre}</td>
+        <td class="mono">${formatFechaListado(r.fecha)}</td>
+        <td class="mono">${String(r.horaInicio).padStart(2,'0')}:00</td>
+        <td><span class="badge ${r.estado === 'Activa' ? 'activa' : 'inactiva'}">${r.estado}</span></td>
+        <td>${badgeAsistencia(r)}</td>
+        <td class="mono">${penalizacionTxt}</td>
+        <td>
+          ${puedeCancelar
+            ? `<button class="btn btn-clay btn-sm" onclick="cancelarReserva(${r.id})">Cancelar</button>`
+            : (r.estado === 'Activa' ? `<span style="font-size:11.5px; color:var(--ink-soft);">${motivoNoCancelable(r)}</span>` : "")}
+        </td>
+      </tr>
+    `;
+  }).join("") : `<tr><td colspan="8"><div class="empty">No hay reservas registradas.</div></td></tr>`;
+}
+
+function aplicarFiltroReservas(){
+  const buscador = document.getElementById("reserva-buscar");
+  const q = buscador ? buscador.value.trim().toLowerCase() : "";
+  let lista = reservas;
+
+  if (q){
+    lista = lista.filter(r => r.socioNombre.toLowerCase().includes(q));
+  }
+  renderReservasListado(lista);
+}
+
+const reservaBuscarInput = document.getElementById("reserva-buscar");
+if (reservaBuscarInput) reservaBuscarInput.addEventListener("input", aplicarFiltroReservas);
+
+// SO03 — Cancelar reserva: libera la pista en el calendario y refresca la tabla sin recargar
+function cancelarReserva(id){
+  const res = reservas.find(r => r.id === id);
+  if (!res) return;
+
+  if (res.estado !== 'Activa') return;
+
+  // SO03 — Regla de negocio: no se puede cancelar una reserva para el mismo día
+  if (esMismoDiaReserva(res.fecha)){
+    showMsg("reserva-msg", "No se puede cancelar una reserva para el mismo día.", false);
+    showToast("No se puede cancelar: la reserva es para hoy", true);
+    return;
+  }
+
+  const penalizacion = calcularPenalizacion(res);
+
+  if (!confirm(`¿Cancelar la reserva de ${res.socioNombre} (${res.pistaNombre}, ${formatFechaListado(res.fecha)} ${String(res.horaInicio).padStart(2,'0')}:00)?\n\nSe aplicará una penalización de Bs. ${penalizacion.toFixed(2)} en la próxima factura.`)) return;
+
+  res.estado = 'Cancelada';
+  res.penalizacion = penalizacion;          // AD03 — importe de penalización aplicado (queda fijo aunque luego cambie la tarifa)
+  res.fechaCancelacion = new Date().toISOString();
+  guardarDatos();
+
+  // Si la reserva cancelada estaba seleccionada en el panel lateral, se limpia
+  if (selectedReservaToConfirm && selectedReservaToConfirm.id === res.id) resetPanel();
+
+  showMsg("reserva-msg", `Reserva de ${res.socioNombre} cancelada. Penalización aplicada: Bs. ${penalizacion.toFixed(2)}.`);
+  showToast(`Reserva cancelada — penalización Bs. ${penalizacion.toFixed(2)}`);
+
+  renderMatrix();        // libera automáticamente la pista en el calendario
+  aplicarFiltroReservas(); // actualiza la tabla sin recargar la página
+}
 
 // ============================================================
 // INICIALIZACIÓN
 // ============================================================
+cargarDatos();
+if (reservas.length) nextReservaId = Math.max(...reservas.map(r => r.id)) + 1;
 renderPistas();
 renderPrecio();
 renderSocios();
+aplicarFiltroReservas();
 </script>
 
 </body>
