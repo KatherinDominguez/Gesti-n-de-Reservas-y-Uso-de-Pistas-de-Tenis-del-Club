@@ -176,12 +176,10 @@ feature/hu15-historial-socio          → Noemi
 
 ### 📉 Gráfico Burndown
 
-<center>
+<div align="center">
   <img src="tenis-club/assets/burndown.png" alt="Gráfico Burndown Sprint 3" width="350">
-</center>
-
-
-En el Burndown visualizamos los tiempos requeridos para la entrega del programa con toda la documentación correspondiente.
+  <p>En el Burndown visualizamos los tiempos requeridos para la entrega del programa con toda la documentación correspondiente.</p>
+</div>
 
 ---
 
