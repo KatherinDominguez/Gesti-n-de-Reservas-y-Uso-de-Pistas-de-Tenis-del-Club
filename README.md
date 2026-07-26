@@ -124,7 +124,7 @@ feature/hu4-hu5-hu6-tarifa-castigo        → Noemi
 
 #### 🎬 DEMO
 <!-- Reemplaza la ruta de abajo por el gif del Sprint 1, por ejemplo: ./assets/demo-sprint1.gif -->
-![Demo Sprint 1](./assets/demo-sprint1.gif)
+![Demo Sprint 1](./tenis-club/assets/demo-sprint1.gif)
 
 ---
 
@@ -148,7 +148,7 @@ feature/hu-so03-ad07-registro-ocupacion       → Noemi
 
 #### 🎬 DEMO
 <!-- Reemplaza la ruta de abajo por el gif del Sprint 2, por ejemplo: ./assets/demo-sprint2.gif -->
-![Demo Sprint 2](./assets/demo-sprint2.gif)
+![Demo Sprint 2](./tenis-club/assets/demo-sprint2.gif)
 
 ---
 
@@ -172,14 +172,13 @@ feature/hu15-historial-socio          → Noemi
 **Hito del Sprint 3 (Hito del Proyecto):** Se rescató y estabilizó la configuración del backend (`package.json`, `server.js`) subsanando errores de importación de módulos (`fileStore` vs `fileStorage`). Todo el código del equipo se fusionó y testeó en la rama `feature/sprint3-integracion`. Una vez verificado el estado de salud del sistema, se realizó el merge definitivo a `develop` y, finalmente, se trasladó todo el historial limpio a la rama **`main`** para la entrega final al ingeniero.
 
 #### 🎬 DEMO
-![Demo Sprint 3](./assets/demo-sprint3.gif)
+![Demo Sprint 3](./tenis-club/assets/demo-sprint3.gif)
 
 ### 📉 Gráfico Burndown
 
 <center>
-  <img src="assets/burndown.png" alt="Gráfico Burndown Sprint 3" width="350">
+  <img src="tenis-club/assets/burndown.png" alt="Gráfico Burndown Sprint 3" width="350">
 </center>
-
 
 
 En el Burndown visualizamos los tiempos requeridos para la entrega del programa con toda la documentación correspondiente.
